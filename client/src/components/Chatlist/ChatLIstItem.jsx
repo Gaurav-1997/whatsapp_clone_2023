@@ -1,13 +1,12 @@
 import React from "react";
 import Avatar from "../common/Avatar";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   setAllContactsPage,
   setCurrentChatUser,
 } from "@/features/user/userSlice";
 
 function ChatLIstItem({ data, isContactPage}) {
-  const currentChatUser = useSelector((state) => state.currentChatUser);
   const dispatch = useDispatch();
 
   const handleContactClick = () => {

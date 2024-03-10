@@ -5,15 +5,13 @@ import { BsFillChatLeftTextFill, BsThreeDotsVertical } from "react-icons/bs";
 import { setAllContactsPage } from "../../features/user/userSlice";
 
 function ChatListHeader() {
-  const userInfo = useSelector((state) => state.userInfo);
+  const {userInfo} = useSelector((state) => state.userReducer);
   const dispatch = useDispatch();
 
   const handleAllContactsPage = () => {
     dispatch(setAllContactsPage());
   };
   
-  // console.log("ChatListHeader");
-  // console.log(userInfo);
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center">
       <div className="cursor-pointer">

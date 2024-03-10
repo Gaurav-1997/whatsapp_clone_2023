@@ -1,6 +1,5 @@
 import Avatar from "@/components/common/Avatar";
 import Input from "@/components/common/Input";
-import { useStateProvider } from "@/context/StateContext";
 import { setUser, setNewUser } from "@/features/user/userSlice";
 import { ONBOARD_USER_ROUTE } from "@/utils/ApiRoutes";
 import Image from "next/image";
@@ -10,15 +9,11 @@ import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 
 function onboarding() {
-  console.log("Reached /onbarding page");
 
-  // const [{ userInfo }] = useStateProvider();
   const router = useRouter();
   const dispatch = useDispatch();
-  const userInfo = useSelector((state) => state.userInfo);
+  const {userInfo, newUser} = useSelector((state) => state.userReducer);
   console.log("onbarding userInfo: ",userInfo);
-  const newUser = useSelector((state) => state.newUser);
-  // console.log(userInfo);
 
   const [name, setName] = useState(userInfo?.name || "");
   const [about, setAbout] = useState("");

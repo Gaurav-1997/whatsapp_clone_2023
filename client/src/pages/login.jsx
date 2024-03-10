@@ -13,8 +13,7 @@ function login() {
   const router = useRouter();
 
   const dispatch = useDispatch();
-  const userInfo = useSelector((state) => state.userInfo);
-  const newUser = useSelector((state) => state.newUser);
+  const {userInfo, newUser} = useSelector((state) => state.userReducer);
 
   useEffect(() => {
     if (userInfo?.id && !newUser) {

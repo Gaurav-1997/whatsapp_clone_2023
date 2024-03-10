@@ -5,7 +5,7 @@ import { firebaseAuth } from "@/utils/FirebaseConfig";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { CHECK_USER_ROUTE, GET_MESSAGES_ROUTE, HOST } from "@/utils/ApiRoutes";
-import { Router, useRouter } from "next/router";
+import { useRouter } from "next/router";
 import {
   setUser,
   setMessages,
@@ -13,6 +13,10 @@ import {
   addMessage,
 } from "@/features/user/userSlice";
 import socketIOClient from "socket.io-client";
+import {connectSocket, disconnectFromSocket} from "@/features/socket/socketSlice";
+import {CONNECTED} from "@/utils/SocketStatus"
+import {addUser, getMessages} from "@/features/chat/chatSlice"
+
 
 const ChatList = dynamic(() => import("./Chatlist/ChatList"));
 const Empty = dynamic(() => import("./Empty"));
@@ -21,62 +25,75 @@ const Chat = dynamic(() => import("./Chat/Chat"));
 function Main() {
   const router = useRouter();
 
-  let userInfo = useSelector((state) => state.userInfo);
-  console.log("userInfo:", userInfo);
+  let {userInfo, currentChatUser} = useSelector((reduxState) => reduxState.userReducer);
+  const {connectionStatus} = useSelector(reduxState=>reduxState.socketReducer);
   const dispatch = useDispatch();
-  const currentChatUser = useSelector((state) => state.currentChatUser);
   const [redirectLogin, setRedirectLogin] = useState(false);
   const [socketEvent, setSocketEvent] = useState(false);
-  const socketRef = useRef();
+  // const socketRef = useRef();
 
   useEffect(() => {
     if (redirectLogin) router.push("/login");
   }, [redirectLogin]);
-
-  useEffect(() => {
-    console.log("userInfo", userInfo);
-
-    if (userInfo && !socketRef.current) {
-      console.log("userInfo inside", userInfo);
-      socketRef.current = socketIOClient(HOST);
-      console.log("socketRef", socketRef);
-      socketRef.current.emit("add-user", userInfo?.id);
-      dispatch(setSocket(socketRef));
+  
+  useEffect(()=>{
+    if(userInfo){
+      console.log("new Socket method");
+      dispatch(connectSocket());
+      dispatch(addUser(userInfo?.id))
     }
-  }, [userInfo]);
 
-  useEffect(() => {
-    console.log("msg-recieved event captured");
-    if (socketRef.current && !socketEvent) {
-      socketRef.current.on("msg-recieved", (data) => {
-        console.log("msg-recieved event captured inside useEffect hook");
-        console.log(data.message);
-        dispatch(addMessage({ newMessage: { ...data.message } }));
-      });
-      setSocketEvent(true);
-    }
-  }, [socketRef.current]);
-
-  useEffect(() => {
-    const getMessages = async () => {
-      try {
-        const getMessagesURL = `${GET_MESSAGES_ROUTE}/${userInfo?.id}/${currentChatUser?.id}`;
-        const { data } = await axios.get(getMessagesURL);
-        // console.log(data.messages);
-        dispatch(setMessages(data.messages));
-      } catch (error) {
-        console.log(error);
+    return ()=>{
+      if(connectionStatus === CONNECTED){
+        dispatch(disconnectFromSocket())
       }
-    };
+    }
+  }
+  ,[userInfo])
+  // useEffect(() => {
+  //   console.log("userInfo", userInfo);
+    
+  //   if (userInfo && !socketRef.current) {
+  //     console.log("userInfo inside", userInfo);
+  //     socketRef.current = socketIOClient(HOST);
+  //     console.log("socketRef", socketRef);
+  //     socketRef.current.emit("add-user", userInfo?.id);
+  //     dispatch(setSocket(socketRef));
+  //   }
+  // }, [userInfo]);
+  
+  // useEffect(() => {
+  //   console.log("msg-recieved event captured");
+  //   if (socketRef.current && !socketEvent) {
+  //     socketRef.current.on("msg-recieved", (data) => {
+  //       console.log("msg-recieved event captured inside useEffect hook");
+  //       console.log(data.message);
+  //       dispatch(addMessage({ newMessage: { ...data.message } }));
+  //     });
+  //     setSocketEvent(true);
+  //   }
+  // }, [socketRef.current]);
+  
+  useEffect(() => {
+    // const getMessages = async () => {
+    //   try {
+    //     const getMessagesURL = `${GET_MESSAGES_ROUTE}/${userInfo?.id}/${currentChatUser?.id}`;
+    //     const { data } = await axios.get(getMessagesURL);
+    //     // console.log(data.messages);
+    //     dispatch(setMessages(data.messages));
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // };
     if (currentChatUser) {
-      getMessages();
+      dispatch(getMessages(userInfo?.id, currentChatUser?.id))
     }
   }, [currentChatUser]);
 
   // it is like useEffect. it will run when the page refreshes
   onAuthStateChanged(firebaseAuth, async (currentUser) => {
-    console.log("onAuthStateChanged() userInfo:", userInfo);
-    console.log("onAuthStateChanged() currentUser:", currentUser);
+    // console.log("onAuthStateChanged() userInfo:", userInfo);
+    // console.log("onAuthStateChanged() currentUser:", currentUser);
 
     if (!currentUser) setRedirectLogin(true);
     if (!userInfo && currentUser?.email) {

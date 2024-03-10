@@ -18,7 +18,6 @@ function MessageBar() {
 
   useEffect(() => {
     const checkPress = (event) => {
-      //  console.log("checkPress called", event.keyCode);
       if (event.key === "/") {
         inputRef.current.focus();
         inputRef.current.value = message;
@@ -61,8 +60,7 @@ function MessageBar() {
   };
 
   const dispatch = useDispatch();
-  const { userInfo, currentChatUser } = useSelector((state) => state);
-  const socket = useSelector((state) => state.socket);
+  const { userInfo, currentChatUser, socket } = useSelector((state) => state.userReducer);
 
   const sendMessage = async () => {
     console.log("send message clicked");
@@ -122,25 +120,19 @@ function MessageBar() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             ref={inputRef}
+            onKeyDown={(event)=>{if(event.key==='Enter'){ event.preventDefault(); sendMessage()}}}
           />
         </div>
         <div className="flex w-10 items-center justify-center">
           {/* send message button */}
-          <button
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
-          >
+          <button>
             <MdSend
               className="text-panel-header-icon cursor-pointer text-xl"
               title="Send Message"
               onClick={sendMessage}
             />
           </button>
-          <button>
+          <button className="pl-4">
             <FaMicrophone
               className="text-panel-header-icon cursor-pointer text-xl"
               title="Record"

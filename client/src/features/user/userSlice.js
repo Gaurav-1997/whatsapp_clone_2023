@@ -1,4 +1,6 @@
-import { createSlice, nanoid } from "@reduxjs/toolkit";
+import { GET_ALL_CONTACTS } from "@/utils/ApiRoutes";
+import { createAsyncThunk, createSlice, nanoid } from "@reduxjs/toolkit";
+import axios from "axios";
 
 const initialState = {
   userInfo: undefined,
@@ -7,8 +9,21 @@ const initialState = {
   currentChatUser: undefined,
   allUsers: [],
   messages: [],
-  socket: undefined,
+  socket: null,
+  isLoading: false,
+  allContacts: []
 };
+
+export const getAllContacts = createAsyncThunk('getAllContacts', async(id)=>{
+  try {
+    const {
+      data: { users },
+    } = await axios.get(`${GET_ALL_CONTACTS}/${id}`);
+    return users;
+  } catch (error) {
+    console.log(error);
+  }
+})
 
 export const userSlice = createSlice({
   name: "userInfo",
@@ -17,19 +32,13 @@ export const userSlice = createSlice({
   //reducers contain properties and functions
   reducers: {
     setUser: (state, action) => {
-      // console.log(action.payload);
       state.userInfo = action.payload;
     },
     setNewUser: (state, action) => {
       state.newUser = action.payload;
     },
-    setAllContactsPage: (state, action) => {
+    setAllContactsPage: (state) => {
       state.contactsPage = !state.contactsPage;
-      // this can be done in below steps also
-      // return {
-      //   ...state,
-      //   contactsPage: !state.contactsPage
-      // }
     },
     setCurrentChatUser: (state, action) => {
       state.currentChatUser = action.payload;
@@ -41,16 +50,24 @@ export const userSlice = createSlice({
       state.messages = action.payload;
     },
     setSocket: (state, action) => {
-      // console.log("Socket from userSlice", state.socket);
-      // console.log("Socket from userSlice", action);
       state.socket = action.payload;
     },
     addMessage: (state, action) => {
-      // state.messages.push(action.payload);
-      // console.log("Socket from userSlice", action.payload);
-      state.messages = [...state.messages, action.payload.newMessage];
+      state.messages.push(action.payload.newMessage);
     },
   },
+  extraReducers : (builder) =>{
+    builder.addCase(getAllContacts.pending, (state)=>{
+      state.isLoading = true;
+    });
+    builder.addCase(getAllContacts.fulfilled, (state, action)=>{
+      state.isLoading = false;
+      state.allContacts = action.payload;
+    });
+    builder.addCase(getAllContacts.rejected, (state)=>{
+      state.isLoading = true;
+    });
+  }
 });
 
 export const {

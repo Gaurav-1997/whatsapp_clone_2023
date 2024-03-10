@@ -4,8 +4,11 @@ import "@/styles/globals.css";
 import Head from "next/head";
 import { Provider } from "react-redux";
 import store from "@/store/store";
+import SocketClient from "@/utils/SocketClient";
 
+export const socketClient = new SocketClient();
 export default function App({ Component, pageProps }) {
+  
   return (
     // <StateProvider initialState={initialState} reducer={reducer}>
     <Provider store={store}>

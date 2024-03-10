@@ -7,7 +7,7 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { useSelector } from "react-redux";
 
 function ChatHeader() {
-  const currentChatUser = useSelector(state=>state.currentChatUser);
+  const {currentChatUser} = useSelector(state=>state.userReducer);
 
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center bg-panel-header-background z-10">

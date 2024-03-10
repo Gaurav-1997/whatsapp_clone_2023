@@ -1,8 +1,6 @@
-import { setAllContactsPage, setAllUsers } from "@/features/user/userSlice";
-import { GET_ALL_CONTACTS } from "@/utils/ApiRoutes";
-import axios from "axios";
+import { setAllContactsPage, getAllContacts } from "@/features/user/userSlice";
 import React, { useEffect, useState } from "react";
-import { BiArrowBack, BiSearchAlt2, BiLoader } from "react-icons/bi";
+import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import { FiLoader } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import dynamic from "next/dynamic";
@@ -10,33 +8,25 @@ import dynamic from "next/dynamic";
 const ChatListItem = dynamic(() => import("./ChatListItem"));
 
 function ContactsList() {
-  const userInfo = useSelector((state) => state.userInfo);
-  const [allContacts, setAllContacts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {userInfo, isLoading, allContacts} = useSelector((reduxState) => reduxState.userReducer);
+  // const [allContacts, setAllContacts] = useState([]);
+  // const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const getContacts = async () => {
-      const {
-        data: { users },
-      } = await axios.get(`${GET_ALL_CONTACTS}/${userInfo?.id}`);
-      console.log("getContacts api called");
-      try {
-        // dispatch(setAllUsers(users));
-        setAllContacts(users);
-        setLoading(false);
-      } catch (error) {
-        console.log(err);
-      }
-    };
-
-    // if (allUsers) {
-    //   setLoading(false);
-    // } else
-    getContacts();
+    // const getContacts = async () => {
+    //   try {
+    //     const {
+    //       data: { users },
+    //     } = await axios.get(`${GET_ALL_CONTACTS}/${userInfo?.id}`);
+    //     setAllContacts(users);
+    //     setLoading(false);
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // };
+    dispatch(getAllContacts(userInfo?.id));
   }, []);
-
-  // console.log("allContacts:", allContacts);
 
   return (
     <div className="h-full flex flex-col ">
@@ -65,9 +55,8 @@ function ContactsList() {
             </div>
           </div>
         </div>
-        {/* TODO: to add loading spinner for allcontacts data */}
 
-        {loading ? (
+        {isLoading ? (
           <FiLoader
             color={"white"}
             className="animate-spin text-4xl text-center"

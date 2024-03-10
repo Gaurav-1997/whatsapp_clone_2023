@@ -1,22 +1,17 @@
 import { calculateTime } from "@/utils/CalculateTime";
 import React, { useRef, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import MessageStatus from "@/components/common/MessageStatus";
 
 function ChatContainer() {
-  const messages = useSelector((state) => state.messages);
-  console.log("new message1:", messages.length);
-  const currentChatUser = useSelector((state) => state.currentChatUser);
-  const userInfo = useSelector((state) => state.userInfo);
+  const {messages, userInfo, currentChatUser} = useSelector((state) => state.userReducer);
 
   const chatContainerRef = useRef(null);
 
   useEffect(() => {
-    console.log("new message2:", messages.length);
     chatContainerRef.current.scrollIntoView(false);
   }, [messages]);
 
-  // console.log(messages[0]);
   return (
     <div className="bg-chat-background object-cover bg-fixed bg-no-repeat w-full relative flex-grow overflow-auto custom-scrollbar scroll-smooth">
       <div className="h-full w-full opacity-1 absolute pt-4">
