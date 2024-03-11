@@ -10,12 +10,12 @@ import {
   setUser,
   setMessages,
   setSocket,
-  addMessage,
 } from "@/features/user/userSlice";
 import socketIOClient from "socket.io-client";
 import {connectSocket, disconnectFromSocket} from "@/features/socket/socketSlice";
 import {CONNECTED} from "@/utils/SocketStatus"
-import {addUser, getMessages} from "@/features/chat/chatSlice"
+import {addUser, getMessages, addMessage} from "@/features/chat/chatSlice"
+import { socketClient } from "@/pages/_app";
 
 
 const ChatList = dynamic(() => import("./Chatlist/ChatList"));
@@ -42,6 +42,7 @@ function Main() {
       dispatch(connectSocket());
       dispatch(addUser(userInfo?.id))
     }
+    console.log("Socket",socketClient);
 
     return ()=>{
       if(connectionStatus === CONNECTED){
@@ -62,17 +63,17 @@ function Main() {
   //   }
   // }, [userInfo]);
   
-  // useEffect(() => {
-  //   console.log("msg-recieved event captured");
-  //   if (socketRef.current && !socketEvent) {
-  //     socketRef.current.on("msg-recieved", (data) => {
-  //       console.log("msg-recieved event captured inside useEffect hook");
-  //       console.log(data.message);
-  //       dispatch(addMessage({ newMessage: { ...data.message } }));
-  //     });
-  //     setSocketEvent(true);
-  //   }
-  // }, [socketRef.current]);
+  useEffect(() => {
+    console.log("msg-recieved event captured");
+    if (connectionStatus===CONNECTED) {
+      socketClient.on("msg-recieved", (data) => {
+        console.log("msg-recieved event captured inside useEffect hook");
+        console.log(data.message);
+        dispatch(addMessage({ newMessage: { ...data.message } }));
+      });
+      setSocketEvent(true);
+    }
+  }, [socketClient]);
   
   useEffect(() => {
     // const getMessages = async () => {
@@ -86,7 +87,7 @@ function Main() {
     //   }
     // };
     if (currentChatUser) {
-      dispatch(getMessages(userInfo?.id, currentChatUser?.id))
+      dispatch(getMessages({senderId: userInfo?.id, recieverId:currentChatUser?.id}))
     }
   }, [currentChatUser]);
 

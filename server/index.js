@@ -42,9 +42,9 @@ io.on("connection", (socket) => {
   });
   
   socket.on("send-msg", (data) => {
+    console.log("send-msg listened", data);
     const sendUserSocket = onlineUsers.get(data.to);
     
-    // console.log(sendUserSocket);
     console.log("msg-recieved: from",data.from);
     console.log("msg:",data.message.message);
     console.log("msg-to:",data.to);

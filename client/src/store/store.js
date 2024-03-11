@@ -18,7 +18,7 @@ const serializableMiddleware = createSerializableStateInvariantMiddleware({
 
 const store = configureStore({
   reducer: {userReducer, socketReducer,chatReducer},
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware({serializableCheck:false}).concat(serializableMiddleware),
+  // middleware: (getDefaultMiddleware) => getDefaultMiddleware({serializableCheck:false}).concat(serializableMiddleware),
 });
 
 export default store;

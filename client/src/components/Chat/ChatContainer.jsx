@@ -4,7 +4,8 @@ import { useSelector } from "react-redux";
 import MessageStatus from "@/components/common/MessageStatus";
 
 function ChatContainer() {
-  const {messages, userInfo, currentChatUser} = useSelector((state) => state.userReducer);
+  const {userInfo, currentChatUser} = useSelector((state) => state.userReducer);
+  const {messages} = useSelector(state=>state.chatReducer);
 
   const chatContainerRef = useRef(null);
 

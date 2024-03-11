@@ -5,10 +5,7 @@ import { ImAttachment } from "react-icons/im";
 import { FaMicrophone } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
-import { ADD_MESSAGES_ROUTE } from "@/utils/ApiRoutes";
-// import EmojiPicker from "emoji-picker-react";
-import { addMessage } from "@/features/user/userSlice";
+import { sendMessage } from "@/features/chat/chatSlice"
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"));
 
@@ -62,31 +59,33 @@ function MessageBar() {
   const dispatch = useDispatch();
   const { userInfo, currentChatUser, socket } = useSelector((state) => state.userReducer);
 
-  const sendMessage = async () => {
+  const handleSendMessage = () => {
     console.log("send message clicked");
-    try {
-      // console.log(data);
-      const { data } = await axios.post(ADD_MESSAGES_ROUTE, {
-        to: currentChatUser?.id,
-        from: userInfo?.id,
-        message: message,
-      });
+    dispatch(sendMessage({senderId:userInfo?.id, recieverId:currentChatUser?.id, message}))
+    setMessage("");
+    // try {
+    //   // console.log(data);
+    //   const { data } = await axios.post(ADD_MESSAGES_ROUTE, {
+    //     to: currentChatUser?.id,
+    //     from: userInfo?.id,
+    //     message: message,
+    //   });
 
-      // console.log("socket", socket);
+    //   // console.log("socket", socket);
 
-      socket?.current.emit("send-msg", {
-        to: currentChatUser?.id,
-        from: userInfo?.id,
-        message: data.message,
-      });
+    //   socket?.current.emit("send-msg", {
+    //     to: currentChatUser?.id,
+    //     from: userInfo?.id,
+    //     message: data.message,
+    //   });
 
-      console.log("send-msg emitted");
-      dispatch(addMessage({ newMessage: { ...data.message }, fromSelf: true }));
-      console.log("message updated in redux store");
-      setMessage("");
-    } catch (error) {
-      console.log(error);
-    }
+    //   console.log("send-msg emitted");
+    //   dispatch(addMessage({ newMessage: { ...data.message }, fromSelf: true }));
+    //   console.log("message updated in redux store");
+    //   setMessage("");
+    // } catch (error) {
+    //   console.log(error);
+    // }
   };
 
   return (
@@ -120,7 +119,7 @@ function MessageBar() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             ref={inputRef}
-            onKeyDown={(event)=>{if(event.key==='Enter'){ event.preventDefault(); sendMessage()}}}
+            onKeyDown={(event)=>{if(event.key==='Enter'){ event.preventDefault(); handleSendMessage()}}}
           />
         </div>
         <div className="flex w-10 items-center justify-center">
@@ -129,7 +128,7 @@ function MessageBar() {
             <MdSend
               className="text-panel-header-icon cursor-pointer text-xl"
               title="Send Message"
-              onClick={sendMessage}
+              onClick={handleSendMessage}
             />
           </button>
           <button className="pl-4">
