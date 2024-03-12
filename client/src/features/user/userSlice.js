@@ -16,6 +16,7 @@ const initialState = {
 
 export const getAllContacts = createAsyncThunk('getAllContacts', async(id)=>{
   try {
+    console.log('userInfo.id', id);
     const {
       data: { users },
     } = await axios.get(`${GET_ALL_CONTACTS}/${id}`);
@@ -61,6 +62,7 @@ export const userSlice = createSlice({
       state.isLoading = true;
     });
     builder.addCase(getAllContacts.fulfilled, (state, action)=>{
+      console.log("all Contacts", action.payload)
       state.isLoading = false;
       state.allContacts = action.payload;
     });

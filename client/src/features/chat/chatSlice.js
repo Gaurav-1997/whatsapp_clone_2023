@@ -3,15 +3,16 @@ import { socketClient } from "@/pages/_app";
 import { GET_MESSAGES_ROUTE, ADD_MESSAGES_ROUTE } from "@/utils/ApiRoutes";
 import axios from "axios";
 
-const initialState ={
+const initialState = {
     messageStatus: '', //ideally it should come from the BE
     messages: [],
-    isUserAdded:false,
-    isSending:false,
-    error:""
+    isUserAdded: false,
+    isSending: false,
+    error: "",
+    newMessage: {}
 }
 
-export const addUser = createAsyncThunk('addUser',async (id)=>{
+export const addUser = createAsyncThunk('addUser', async (id) => {
     try {
         return await socketClient.emit('add-user', id)
     } catch (error) {
@@ -19,45 +20,57 @@ export const addUser = createAsyncThunk('addUser',async (id)=>{
     }
 })
 
-export const getMessages = createAsyncThunk('getMessages', async(params={})=>{
+export const getMessages = createAsyncThunk('getMessages', async (params = {}) => {
     try {
         const getMessagesURL = `${GET_MESSAGES_ROUTE}/${params.senderId}/${params.recieverId}`;
         const { data } = await axios.get(getMessagesURL);
         return data;
-      } catch (error) {
+    } catch (error) {
         console.log(error);
-      }
+    }
 })
 
-export const sendMessage = createAsyncThunk('sendMessage', async(postData={})=>{
+const socketEmit = async (params = {}) => {
     try {
+        console.log("params",params);
+       return await socketClient.emit("send-msg", {
+            to: params.recieverId,
+            from: params.senderId,
+            message: params.newMessage,
+        })
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+export const sendMessage = createAsyncThunk('sendMessage', async (postData = {}) => {
+    try {
+        console.log("postData", postData);
         const { data } = await axios.post(ADD_MESSAGES_ROUTE, {
             to: postData.recieverId,
             from: postData.senderId,
             message: postData.message,
-          });
-    
-          await socketClient.emit("send-msg", {
-            to: postData.recieverId,
-            from: postData.senderId,
-            message: data.message,
-          })
+        });
+        console.log("data: ", data);
 
-          return data;
-      } catch (error) {
+        socketEmit({ recieverId: postData.recieverId, senderId: postData.senderId, newMessage: data.message })
+        return data;
+    } catch (error) {
         console.log(error);
-      }
+    }
 })
 
-const chatSlice = createSlice ({
-    name:'chat',
+
+const chatSlice = createSlice({
+    name: 'chat',
     initialState,
-    reducers:{
-        addMessage: (state, action)=>{
+    reducers: {
+        addMessage: (state, action) => {
+            console.log("addMessage", action);
             state.messages.push(action.payload.newMessage);
         }
     },
-    extraReducers:(builder)=>{
+    extraReducers: (builder) => {
         builder.addCase(addUser.pending, (state) => {
             state.isUserAdded = false;
         });
@@ -67,36 +80,34 @@ const chatSlice = createSlice ({
         builder.addCase(addUser.rejected, (state) => {
             state.isUserAdded = false;
         });
-        builder.addCase(getMessages.pending, (state, action)=>{
-            state.messages =[]
+        builder.addCase(getMessages.pending, (state, action) => {
+            state.messages = []
         });
-        builder.addCase(getMessages.fulfilled, (state, action)=>{
+        builder.addCase(getMessages.fulfilled, (state, action) => {
             state.messages = action.payload.messages
         });
-        builder.addCase(getMessages.rejected, (state, action)=>{
-            state.messages =[]
+        builder.addCase(getMessages.rejected, (state, action) => {
+            state.messages = []
         });
-        builder.addCase(sendMessage.pending, (state, action)=>{
+        builder.addCase(sendMessage.pending, (state, action) => {
             state.isSending = true;
-            console.log(action.payload);
+            console.log("sendMessage.pending", action.payload);
         });
-        builder.addCase(sendMessage.fulfilled, (state, action)=>{
-            console.log("sendMessage.fulfilled",action.payload)
+        builder.addCase(sendMessage.fulfilled, (state, action) => {
+            console.log("sendMessage.fulfilled", action.payload)
             state.isSending = false;
-            const newMessage = {...action.payload.message}
-            /* new message added in messge state*/
-            state.messages.push({newMessage, fromSelf:true})
+            state.messages.push({...action.payload.message, fromSelf:true});
         });
-        builder.addCase(sendMessage.rejected, (state, action)=>{
-            if(action?.error?.message === "Rejected"){
+        builder.addCase(sendMessage.rejected, (state, action) => {
+            if (action?.error?.message === "Rejected") {
                 console.log(action?.payload)
                 state.isSending = false;
                 state.error = action?.payload || 'Something went wrong'
             }
-        })
+        });
     }
 })
 
-export const {addMessage} = chatSlice.actions;
+export const { addMessage } = chatSlice.actions;
 
 export default chatSlice.reducer;

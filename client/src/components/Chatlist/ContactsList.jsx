@@ -1,32 +1,16 @@
 import { setAllContactsPage, getAllContacts } from "@/features/user/userSlice";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import { FiLoader } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import dynamic from "next/dynamic";
+// import ChatListItem from "./ChatLIstItem";
 
 const ChatListItem = dynamic(() => import("./ChatListItem"));
 
 function ContactsList() {
-  const {userInfo, isLoading, allContacts} = useSelector((reduxState) => reduxState.userReducer);
-  // const [allContacts, setAllContacts] = useState([]);
-  // const [loading, setLoading] = useState(true);
+  const {isLoading, allContacts} = useSelector((reduxState) => reduxState.userReducer);
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    // const getContacts = async () => {
-    //   try {
-    //     const {
-    //       data: { users },
-    //     } = await axios.get(`${GET_ALL_CONTACTS}/${userInfo?.id}`);
-    //     setAllContacts(users);
-    //     setLoading(false);
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // };
-    dispatch(getAllContacts(userInfo?.id));
-  }, []);
 
   return (
     <div className="h-full flex flex-col ">
@@ -66,7 +50,7 @@ function ContactsList() {
             {Object.entries(allContacts).map(([initialLetter, userList]) => {
               return (
                 <div key={Date.now() + initialLetter}>
-                  <div className="text-teal-light pl-5 py-5">
+                  <div className="text-teal-light pl-4 py-4">
                     {initialLetter}
                     {userList.map((contact) => {
                       return (

@@ -10,12 +10,9 @@ function ChatLIstItem({ data, isContactPage}) {
   const dispatch = useDispatch();
 
   const handleContactClick = () => {
-    // if (currentChatUser?.id === data?.id) {
-      console.log("Contact clicked", data);
       dispatch(setCurrentChatUser(data));
-      // close the contactList Pagee
+      // close the contactList Page
       dispatch(setAllContactsPage());
-    // }
   };
   return (
     <div
@@ -31,6 +28,7 @@ function ChatLIstItem({ data, isContactPage}) {
             <span className="text-white text-lg">{data?.name}</span>
           </div>
         </div>
+            <button className="add-friend text-white text-sm ">Add friend</button>
         <div className="flex border-b border-conversation-border pb-2 pt-1 p3-2">
           <div className="flex justify-between w-full">
             <span className="text-secondary text-sm line-clamp-1">

@@ -25,7 +25,7 @@ const server = app.listen(process.env.PORT, () => {
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000"],
   },
 });
 
@@ -33,7 +33,7 @@ global.onlineUsers = new Map();
 
 io.on("connection", (socket) => {
   console.log("Client connected",socket.id);
-  // console.log("Client connected",socket);
+  
   global.chatSocket = socket;
 
   socket.on("add-user", (userId) => {
@@ -42,7 +42,7 @@ io.on("connection", (socket) => {
   });
   
   socket.on("send-msg", (data) => {
-    console.log("send-msg listened", data);
+    console.log("send-msg listened");
     const sendUserSocket = onlineUsers.get(data.to);
     
     console.log("msg-recieved: from",data.from);

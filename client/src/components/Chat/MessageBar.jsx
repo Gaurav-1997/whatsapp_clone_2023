@@ -1,18 +1,17 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, memo } from "react";
 import dynamic from "next/dynamic";
 import { BsEmojiSmile } from "react-icons/bs";
 import { ImAttachment } from "react-icons/im";
 import { FaMicrophone } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { sendMessage } from "@/features/chat/chatSlice"
+import { sendMessage, socketEmit } from "@/features/chat/chatSlice"
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"));
 
 function MessageBar() {
   const inputRef = useRef(null);
   const emojiPickerRef = useRef(null);
-
   useEffect(() => {
     const checkPress = (event) => {
       if (event.key === "/") {
@@ -24,7 +23,7 @@ function MessageBar() {
     window.addEventListener("keydown", checkPress);
     return () => {
       window.removeEventListener("keydown", checkPress);
-    };
+    };   
   }, []);
 
   useEffect(() => {
@@ -60,32 +59,8 @@ function MessageBar() {
   const { userInfo, currentChatUser, socket } = useSelector((state) => state.userReducer);
 
   const handleSendMessage = () => {
-    console.log("send message clicked");
     dispatch(sendMessage({senderId:userInfo?.id, recieverId:currentChatUser?.id, message}))
     setMessage("");
-    // try {
-    //   // console.log(data);
-    //   const { data } = await axios.post(ADD_MESSAGES_ROUTE, {
-    //     to: currentChatUser?.id,
-    //     from: userInfo?.id,
-    //     message: message,
-    //   });
-
-    //   // console.log("socket", socket);
-
-    //   socket?.current.emit("send-msg", {
-    //     to: currentChatUser?.id,
-    //     from: userInfo?.id,
-    //     message: data.message,
-    //   });
-
-    //   console.log("send-msg emitted");
-    //   dispatch(addMessage({ newMessage: { ...data.message }, fromSelf: true }));
-    //   console.log("message updated in redux store");
-    //   setMessage("");
-    // } catch (error) {
-    //   console.log(error);
-    // }
   };
 
   return (
@@ -143,4 +118,4 @@ function MessageBar() {
   );
 }
 
-export default MessageBar;
+export default memo(MessageBar);

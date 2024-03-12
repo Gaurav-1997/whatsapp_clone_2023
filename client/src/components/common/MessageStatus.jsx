@@ -1,4 +1,4 @@
-import React from "react";
+import React,{memo} from "react";
 import {BsCheck, BsCheckAll} from "react-icons/bs"
 
 function MessageStatus({messageStatus}) {
@@ -10,4 +10,4 @@ function MessageStatus({messageStatus}) {
   </>;
 }
 
-export default MessageStatus;
+export default memo(MessageStatus);
