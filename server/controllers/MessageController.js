@@ -1,4 +1,5 @@
 import getPrismaInstance from "../utils/PrismaClient.js";
+import { renameSync } from "fs"
 
 export const addMessage = async (req, res, next) => {
   try {
@@ -81,3 +82,32 @@ export const getMessages = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const addImageMessage = async (req, res, next) => {
+  try {
+    if (req.file) {
+      const date = Date.now();
+      const filePathName = "uploads/images/" + date + req.file.originalname;
+      renameSync(req.file.path, filePathName)
+
+      const prisma = getPrismaInstance();
+      const { from, to } = req.query;
+      if (from && to) {
+        const message = await prisma.messages.create({
+          data: {
+            message: filePathName,
+            senderId: parseInt(from),
+            recieverId: parseInt(to),
+            type: "image"
+          }
+        })
+        return res.status(201).json({ message })
+      }
+      return res.status(400).send("From & to is required")
+    }
+    return res.status(400).send("Image is required")
+  } catch (error) {
+    next(error)
+  }
+}
