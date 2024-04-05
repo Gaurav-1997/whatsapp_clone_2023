@@ -6,7 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth } from "@/utils/FirebaseConfig";
 import { useDispatch, useSelector } from "react-redux";
 import { CHECK_USER_ROUTE } from "@/utils/ApiRoutes";
-import {getAllContacts, setUser} from "@/features/user/userSlice";
+import { getAllContacts, setUser } from "@/features/user/userSlice";
 import { connectSocket, disconnectFromSocket } from "@/features/socket/socketSlice";
 import { CONNECTED } from "@/utils/SocketStatus"
 import { addUser, getMessages } from "@/features/chat/chatSlice"
@@ -18,6 +18,7 @@ import preLoadIt from "@/preLoaded/preLoadIt";
 const ChatList = dynamic(() => import("./Chatlist/ChatList"));
 const Empty = dynamic(() => import("./Empty"));
 const Chat = dynamic(() => import("./Chat/Chat"));
+const SearchMessages = dynamic(() => import("./Chat/SearchMessages"));
 
 function Main() {
   const router = useRouter();
@@ -27,6 +28,7 @@ function Main() {
   const dispatch = useDispatch();
   const [redirectLogin, setRedirectLogin] = useState(false);
   const { connectionStatus } = useSelector(reduxState => reduxState.socketReducer);
+  const { searchMessage } = useSelector(reduxState => reduxState.chatReducer);
   let { userInfo, currentChatUser } = useSelector((reduxState) => reduxState.userReducer);
 
   useEffect(() => {
@@ -48,29 +50,6 @@ function Main() {
     }
   }
     , [userInfo])
-  // useEffect(() => {
-  //   console.log("userInfo", userInfo);
-
-  //   if (userInfo && !socketRef.current) {
-  //     console.log("userInfo inside", userInfo);
-  //     socketRef.current = socketIOClient(HOST);
-  //     console.log("socketRef", socketRef);
-  //     socketRef.current.emit("add-user", userInfo?.id);
-  //     dispatch(setSocket(socketRef));
-  //   }
-  // }, [userInfo]);
-
-  // useEffect(() => {
-  //   console.log("msg-recieved event captured");
-  //   if (connectionStatus===CONNECTED) {
-  //     socketClient.on("msg-recieved", (data) => {
-  //       console.log("msg-recieved event captured inside useEffect hook");
-  //       console.log(data.message);
-  //       dispatch(addMessage({ newMessage: { ...data.message } }));
-  //     });
-  //     setSocketEvent(true);
-  //   }
-  // }, [socketClient]);
 
   useEffect(() => {
     if (currentChatUser) {
@@ -80,8 +59,6 @@ function Main() {
 
   // it is like useEffect. it will run when the page refreshes
   onAuthStateChanged(firebaseAuth, async (currentUser) => {
-    // console.log("onAuthStateChanged() userInfo:", userInfo);
-    // console.log("onAuthStateChanged() currentUser:", currentUser);
 
     if (!currentUser) setRedirectLogin(true);
     if (!userInfo && currentUser?.email) {
@@ -110,11 +87,18 @@ function Main() {
 
   return (
     <>
-      <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-screen">
+      <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-screen transition-translate duration-300 ease-in-out overflow-hidden">
         <ChatList />
-        {/* <Empty /> */}
-        {userInfo && currentChatUser ? <Chat /> : <Empty />}
-      </div>
+
+        {userInfo && currentChatUser ?
+          <div
+            className={`grid ${searchMessage ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                
+            <Chat/>
+            {searchMessage && <SearchMessages />}
+          </div>
+          : <Empty />}
+      </div >
     </>
   );
 }

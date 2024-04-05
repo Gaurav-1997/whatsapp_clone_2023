@@ -24,7 +24,7 @@ function ChatList() {
       {pageType === "default"  && (
         <>
           <ChatListHeader />
-          <SearchBar />
+          <SearchBar filterRequired={true} />
           <List />
         </>
       )}

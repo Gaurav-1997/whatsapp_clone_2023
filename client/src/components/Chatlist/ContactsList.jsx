@@ -1,10 +1,9 @@
-import { setAllContactsPage, getAllContacts } from "@/features/user/userSlice";
-import React, { useEffect } from "react";
+import { setAllContactsPage } from "@/features/user/userSlice";
+import React from "react";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import { FiLoader } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import dynamic from "next/dynamic";
-// import ChatListItem from "./ChatLIstItem";
 
 const ChatListItem = dynamic(() => import("./ChatListItem"));
 
@@ -13,7 +12,7 @@ function ContactsList() {
   const dispatch = useDispatch();
 
   return (
-    <div className="h-full flex flex-col ">
+    <div className="h-full flex flex-col">
       <div className="h-24 flex items-end px-3 py-4">
         <div className="flex items-center gap-12 text-white ">
           <BiArrowBack
@@ -50,7 +49,7 @@ function ContactsList() {
             {Object.entries(allContacts).map(([initialLetter, userList]) => {
               return (
                 <div key={Date.now() + initialLetter}>
-                  <div className="text-teal-light pl-4 py-4">
+                  <div className="text-teal-light pl-2 py-2">
                     {initialLetter}
                     {userList.map((contact) => {
                       return (

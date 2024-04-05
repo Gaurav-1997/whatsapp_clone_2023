@@ -4,9 +4,9 @@
 // };
 
 const nextConfig = {
-    reactStrictMode: true,
+    reactStrictMode: false,
   images: {
-    domains: ["lh3.googleusercontent.com"],
+    domains: ["lh3.googleusercontent.com", "localhost"],
     remotePatterns: [
       {
         protocol: "https",

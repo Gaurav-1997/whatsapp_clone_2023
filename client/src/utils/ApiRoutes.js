@@ -8,3 +8,4 @@ export const ONBOARD_USER_ROUTE = `${AUTH_ROUTE}/onBoardUser-user`;
 export const GET_ALL_CONTACTS = `${AUTH_ROUTE}/get-contacts`;
 export const ADD_MESSAGES_ROUTE = `${MESSAGES_ROUTE}/add-messages`;
 export const GET_MESSAGES_ROUTE = `${MESSAGES_ROUTE}/get-messages`;
+export const ADD_IMAGE_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-image-message`;

@@ -5,13 +5,18 @@ import { ImAttachment } from "react-icons/im";
 import { FaMicrophone } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { sendMessage, socketEmit } from "@/features/chat/chatSlice"
+import { sendMessage, sendImageMessage } from "@/features/chat/chatSlice"
+import PhotoPicker from "../common/PhotoPicker";
+import CaptureAudio from "../common/CaptureAudio";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"));
 
 function MessageBar() {
   const inputRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const [grabPhoto, setGrabPhoto] = useState(false);
+  const [showAudioRecorder, setAudioRecorder] = useState(false);
+
   useEffect(() => {
     const checkPress = (event) => {
       if (event.key === "/") {
@@ -23,7 +28,7 @@ function MessageBar() {
     window.addEventListener("keydown", checkPress);
     return () => {
       window.removeEventListener("keydown", checkPress);
-    };   
+    };
   }, []);
 
   useEffect(() => {
@@ -44,6 +49,18 @@ function MessageBar() {
     };
   }, []);
 
+  useEffect(() => {
+    if (grabPhoto) {
+      const data = document.getElementById("photo-picker");
+      data.click();
+      document.body.onfocus = (e) => {
+        setTimeout(() => {
+          setGrabPhoto(false);
+        }, 1000);
+      };
+    }
+  }, [grabPhoto]);
+
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -55,16 +72,34 @@ function MessageBar() {
     setMessage((prev) => (prev += emoji.emoji));
   };
 
+  const handleDocClick = (event) => {
+    setGrabPhoto(true);
+  };
+
   const dispatch = useDispatch();
-  const { userInfo, currentChatUser, socket } = useSelector((state) => state.userReducer);
+  const { userInfo, currentChatUser } = useSelector((state) => state.userReducer);
 
   const handleSendMessage = () => {
-    dispatch(sendMessage({senderId:userInfo?.id, recieverId:currentChatUser?.id, message}))
+    dispatch(sendMessage({ senderId: userInfo?.id, recieverId: currentChatUser?.id, message }))
     setMessage("");
+  };
+
+  const photoPickerChange = async (event) => {
+    try {
+      const file = event.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("image", file);
+      dispatch(sendImageMessage({ formData, senderId: userInfo?.id, recieverId: currentChatUser?.id }))
+    } catch (error) {
+      console.log(error);
+    }
+
   };
 
   return (
     <div className="bg-panel-header-background h-20 px-4 flex items-center gap-6 relative">
+      { !showAudioRecorder && 
       <>
         <div className="flex gap-6">
           <BsEmojiSmile
@@ -84,6 +119,7 @@ function MessageBar() {
           <ImAttachment
             className="text-panel-header-icon cursor-pointer text-xl"
             title="Attach files"
+            onClick={handleDocClick}
           />
         </div>
         <div className="w-full rounded-lg h-10 flex items-center">
@@ -94,26 +130,32 @@ function MessageBar() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             ref={inputRef}
-            onKeyDown={(event)=>{if(event.key==='Enter'){ event.preventDefault(); handleSendMessage()}}}
+            onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); handleSendMessage() } }}
           />
         </div>
         <div className="flex w-10 items-center justify-center">
           {/* send message button */}
-          <button>
-            <MdSend
-              className="text-panel-header-icon cursor-pointer text-xl"
-              title="Send Message"
-              onClick={handleSendMessage}
-            />
-          </button>
-          <button className="pl-4">
-            <FaMicrophone
-              className="text-panel-header-icon cursor-pointer text-xl"
-              title="Record"
-            />
+          <button className="bg-teal-800 p-2 rounded-lg">
+            {message.length ?
+              <MdSend
+                className="text-panel-header-icon cursor-pointer text-xl"
+                title="Send Message"
+                fill="white"
+                onClick={handleSendMessage}
+              /> :
+              <FaMicrophone
+                className="text-panel-header-icon cursor-pointer text-xl"
+                title="Record"
+                fill="white"
+                onClick={()=>{setAudioRecorder(true)}}
+              />
+            }
           </button>
         </div>
       </>
+      }
+      {grabPhoto && <PhotoPicker onChange={photoPickerChange} />}
+      {showAudioRecorder && <CaptureAudio hide={setAudioRecorder}/>}
     </div>
   );
 }
