@@ -15,7 +15,7 @@ class SocketClient {
   }
 
     connect() {
-      this.socketInstance = io.connect(SOCKET_HOST, { transports: ['websocket'] });
+      this.socketInstance = io.connect(SOCKET_HOST, { transports: ['websocket']});
       // console.log("this.socket",this.socket);
       return new Promise((resolve, reject) => {
         this.socketInstance.on('connect', () => resolve());
@@ -33,7 +33,7 @@ class SocketClient {
     }
   
     emit(event, data) {
-      console.log("event, data, response", event, data)
+      console.log("event, data", event, data)
       return new Promise((resolve, reject) => {
         if (!this.socketInstance) return reject('No socket connection.');
         
@@ -54,7 +54,7 @@ class SocketClient {
       // No promise is needed here, but we're expecting one in the middleware.
       return new Promise((resolve, reject) => {
         if (!this.socketInstance) return reject('No socket connection.');
-        
+        console.log('event recieved ', event);
         this.socketInstance.on(event, fun);
         return resolve();
       });

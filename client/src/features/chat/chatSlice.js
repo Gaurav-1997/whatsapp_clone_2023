@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { socketClient } from "@/pages/_app";
-import { GET_MESSAGES_ROUTE, ADD_MESSAGES_ROUTE, ADD_IMAGE_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
+import { GET_MESSAGES_ROUTE, ADD_MESSAGES_ROUTE, ADD_IMAGE_MESSAGE_ROUTE, USER_STATUS_ROUTE } from "@/utils/ApiRoutes";
 import axios from "axios";
 
 const initialState = {
@@ -11,6 +11,7 @@ const initialState = {
     error: "",
     newMessage: {},
     searchMessage :false,
+    chatId: null
 }
 
 export const addUser = createAsyncThunk('addUser', async (id) => {
@@ -44,17 +45,27 @@ const socketEmit = async (params = {}) => {
     }
 }
 
+const socketEmitFriendRequest = async(params={})=>{
+    try {
+        console.log(params)
+    /**
+     {"senderId": number,"receiverId": number}
+     * 
+     */
+        return await socketClient.emit("friend-request-sent",params)
+    } catch (error) {
+        console.log('Error socketEmitFriendRequest', error)
+    }
+}
+
 export const sendMessage = createAsyncThunk('sendMessage', async (postData = {}) => {
     try {
-        console.log("postData", postData);
+
         const { data } = await axios.post(ADD_MESSAGES_ROUTE, {
             to: postData.recieverId,
             from: postData.senderId,
-            message: postData.message,
+            message: postData.message
         });
-        console.log("data: ", data);
-
-        socketEmit({ recieverId: postData.recieverId, senderId: postData.senderId, newMessage: data.message })
         return data;
     } catch (error) {
         console.log(error);
@@ -73,6 +84,7 @@ export const sendImageMessage = createAsyncThunk('sendImageMessage', async ({ fo
             },
         )
         
+        console.log("sendImageMessage: ",data)
         if(status === 201){
             socketEmit({recieverId, senderId, newMessage: data.message})
         }
@@ -82,18 +94,20 @@ export const sendImageMessage = createAsyncThunk('sendImageMessage', async ({ fo
     }
 })
 
-
 const chatSlice = createSlice({
     name: 'chat',
     initialState,
     reducers: {
         addMessage: (state, action) => {
-            console.log("addMessage", action);
+            // console.log("addMessage", action);
             state.messages.push(action.payload.newMessage);
         },
         setSearchMessage :(state)=>{
             state.searchMessage=!state.searchMessage;
             console.log(state.searchMessage);
+        },
+        setChatId : (state, action)=>{
+            state.chatId = action.payload;
         }
     },
     extraReducers: (builder) => {
@@ -117,10 +131,10 @@ const chatSlice = createSlice({
         });
         builder.addCase(sendMessage.pending, (state, action) => {
             state.isSending = true;
-            console.log("sendMessage.pending", action.payload);
+            // console.log("sendMessage.pending", action.payload);
         });
         builder.addCase(sendMessage.fulfilled, (state, action) => {
-            console.log("sendMessage.fulfilled", action.payload)
+            // console.log("sendMessage.fulfilled", action.payload)
             state.isSending = false;
             state.messages.push({ ...action.payload.message, fromSelf: true });
         });
@@ -137,6 +151,6 @@ const chatSlice = createSlice({
     }
 })
 
-export const { addMessage, setSearchMessage } = chatSlice.actions;
+export const { addMessage, setSearchMessage, setChatId } = chatSlice.actions;
 
 export default chatSlice.reducer;

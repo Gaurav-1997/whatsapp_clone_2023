@@ -6,14 +6,11 @@ import { onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth } from "@/utils/FirebaseConfig";
 import { useDispatch, useSelector } from "react-redux";
 import { CHECK_USER_ROUTE } from "@/utils/ApiRoutes";
-import { getAllContacts, setUser } from "@/features/user/userSlice";
-import { connectSocket, disconnectFromSocket } from "@/features/socket/socketSlice";
-import { CONNECTED } from "@/utils/SocketStatus"
-import { addUser, getMessages } from "@/features/chat/chatSlice"
-import { socketClient } from "@/pages/_app";
-import listenHook from "@/hooks/listenhook";
+import { setUser, setOnlineUsers } from "@/features/user/userSlice";
+import { getMessages, setChatId } from "@/features/chat/chatSlice";
+import { listenHook } from "@/hooks/listenhook";
 import preLoadIt from "@/preLoaded/preLoadIt";
-
+import { pusherClient } from "@/utils/PusherClient";
 
 const ChatList = dynamic(() => import("./Chatlist/ChatList"));
 const Empty = dynamic(() => import("./Empty"));
@@ -23,43 +20,46 @@ const SearchMessages = dynamic(() => import("./Chat/SearchMessages"));
 function Main() {
   const router = useRouter();
 
-  listenHook();
   preLoadIt();
+
   const dispatch = useDispatch();
   const [redirectLogin, setRedirectLogin] = useState(false);
-  const { connectionStatus } = useSelector(reduxState => reduxState.socketReducer);
-  const { searchMessage } = useSelector(reduxState => reduxState.chatReducer);
-  let { userInfo, currentChatUser } = useSelector((reduxState) => reduxState.userReducer);
+
+  const { searchMessage } = useSelector(
+    (reduxState) => reduxState.chatReducer
+  );
+  let { userInfo, currentChatUser } = useSelector(
+    (reduxState) => reduxState.userReducer
+  );
 
   useEffect(() => {
     if (redirectLogin) router.push("/login");
   }, [redirectLogin]);
 
-  useEffect(() => {
-    if (userInfo) {
-      console.log("new Socket method");
-      dispatch(connectSocket());
-      dispatch(addUser(userInfo?.id))
+  useEffect(()=>{
+    pusherClient.subscribe('channel:onlineUsers')
+
+    function getOnlineUsersList(onlineUsers){
+      dispatch(setOnlineUsers(onlineUsers))
     }
-    console.log("Socket", socketClient);
+    pusherClient.bind('onlineUsers:data',(onlineUsers)=>getOnlineUsersList(onlineUsers))
 
     return () => {
-      if (connectionStatus === CONNECTED) {
-        dispatch(disconnectFromSocket())
-      }
-    }
-  }
-    , [userInfo])
+      pusherClient.unsubscribe('onlineUsers');
+      pusherClient.unbind("onlineUsers:data", getOnlineUsersList);
+    };
+  },[])
 
   useEffect(() => {
     if (currentChatUser) {
-      dispatch(getMessages({ senderId: userInfo?.id, recieverId: currentChatUser?.id }))
+      dispatch(
+        getMessages({ senderId: userInfo?.id, recieverId: currentChatUser?.id })
+      );
     }
   }, [currentChatUser]);
 
   // it is like useEffect. it will run when the page refreshes
   onAuthStateChanged(firebaseAuth, async (currentUser) => {
-
     if (!currentUser) setRedirectLogin(true);
     if (!userInfo && currentUser?.email) {
       // console.log("currentuser from main.jsx", currentUser);
@@ -69,17 +69,16 @@ function Main() {
       if (!data.status) {
         router.push("/login");
       }
-      console.log(data);
+      // console.log(data);
       if (data?.data) {
         userInfo = {
           id: data.data.id,
           name: data.data.name,
           email: data.data.email,
           profilePicture: data.data.profilePicture,
-          status: data.data.about,
+          status: data.data.about
         };
-        // userInfo = [ id, name, email, profilePicture, status ];
-        console.log("setUser() dispatch from main.jsx");
+        dispatch(setChatId(data.data.pusherId));
         dispatch(setUser(userInfo));
       }
     }
@@ -90,15 +89,17 @@ function Main() {
       <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-screen transition-translate duration-300 ease-in-out overflow-hidden">
         <ChatList />
 
-        {userInfo && currentChatUser ?
+        {userInfo && currentChatUser ? (
           <div
-            className={`grid ${searchMessage ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                
-            <Chat/>
+            className={`grid ${searchMessage ? "grid-cols-2" : "grid-cols-1"}`}
+          >
+            <Chat />
             {searchMessage && <SearchMessages />}
           </div>
-          : <Empty />}
-      </div >
+        ) : (
+          <Empty />
+        )}
+      </div>
     </>
   );
 }

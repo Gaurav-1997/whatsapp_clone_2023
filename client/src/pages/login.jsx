@@ -44,6 +44,7 @@ function login() {
         status: "",
       };
       if (email) {
+        console.log("check email",email)
         const { data } = await axios.post(CHECK_USER_ROUTE, { email });
         console.log(data);
         if (!data.status) {

@@ -2,7 +2,7 @@ import React,{memo} from "react";
 import {BsCheck, BsCheckAll} from "react-icons/bs"
 
 function MessageStatus({messageStatus}) {
-  console.log("messageStatus", messageStatus);
+  // console.log("messageStatus", messageStatus);
   return <>
   {messageStatus === "sent" && <BsCheck className="text-lg" />}
   {messageStatus === "delivered" && <BsCheckAll className="text-lg"/>}
