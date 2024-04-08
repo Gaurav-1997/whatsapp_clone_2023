@@ -1,5 +1,6 @@
 import getPrismaInstance from "../utils/PrismaClient.js";
 import { renameSync } from "fs"
+import { pusherServer } from "../utils/PusherServer.js";
 
 export const addMessage = async (req, res, next) => {
   try {
@@ -30,6 +31,11 @@ export const addMessage = async (req, res, next) => {
         },
         include: { sender: true, reciever: true },
       });
+      /* trigger a pusher event for a specific chat for new message*/
+      const chatId = global.onlineUsers.get(to);
+      console.log("global.onlineUsers", global.onlineUsers)
+      console.log("chatId", chatId)
+      await pusherServer.trigger(chatId, "message:sent", { message: newMessage } );
       return res.status(201).send({ message: newMessage });
     }
     return res.status(400).send("From, to you Message is required.");
@@ -102,6 +108,13 @@ export const addImageMessage = async (req, res, next) => {
             type: "image"
           }
         })
+
+        // Check if the receiver is online.
+        const chatId = onlineUsers.get(to);
+        if(chatId){
+          //means user is online and logged in
+          await pusherServer.trigger(`channel:${chatId}`, "message:sent", { message } );
+        }
         return res.status(201).json({ message })
       }
       return res.status(400).send("From & to is required")

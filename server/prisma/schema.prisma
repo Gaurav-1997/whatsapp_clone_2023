@@ -25,6 +25,9 @@ model User {
   about            String     @default("")
   sentMessages     Messages[] @relation("sentMessages")
   recievedMessages Messages[] @relation("recievedMessages")
+  friends          Int[]     @unique
+  blockedUsers     Int[]     @unique
+  pendingRequest   Int[]     @unique
 }
 
 model Messages {
