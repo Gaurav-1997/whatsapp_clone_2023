@@ -13,11 +13,15 @@ export const checkUser = async (req, res, next) => {
     if (!user) {
       return res.json({ message: "User not found", staus: false });
     } else {
+      user.friends = await getContactList(user.friends, next);
+      user.blockedUsers = await getContactList(user.blockedUsers, next);
+      user.pendingRequest = await getContactList(user.pendingRequest, next);
+
       const pusherId = crypto.randomUUID(user.id);
       onlineUsers.set(user.id, pusherId);
       console.log("auth onlineUsers", onlineUsers);
 
-      return res.json({
+      return res.status(200).json({
         message: "User found",
         status: true,
         data: { ...user, pusherId },
@@ -155,41 +159,88 @@ export const friendRequestHandler = async (req, res, next) => {
 
 export const addFriend = async (req, res, next) => {
   try {
-    const { approverId, requesterId } = req.body;
+    const { approverId, requesterId, isAccepted } = req.body;
     const prisma = getPrismaInstance();
-    const friendList = await prisma.user.update({
-      where: { id: parseInt(approverId) },
-      data: {
-        friends: {
-          push: parseInt(requesterId),
+    console.log(
+      " approverId, requesterId, isAccepted",
+      approverId,
+      requesterId,
+      isAccepted
+    );
+    if (isAccepted) {
+      //adding friend for approver
+      const user = await prisma.user.findUnique({
+        where: { id: parseInt(approverId) },
+        select: {
+          pendingRequest: true,
         },
-      },
-    });
-    //get added friend data and send it in response
+      });
+      const updatedList = [
+        ...new Set(user.pendingRequest.filter((id) => id !== requesterId)),
+      ];
+      console.log(updatedList);
 
-    console.log("friend pushed", friendList);
-    return res.status(200).json({ friendList });
+      await prisma.user.update({
+        where: { id: parseInt(approverId) },
+        data: {
+          friends: {
+            push: parseInt(requesterId),
+          },
+          pendingRequest: {
+            set: updatedList,
+          },
+        },
+      });
+      //adding friend for requester also
+      // await prisma.user.update({
+      //   where: { id: parseInt(requesterId) },
+      //   data: {
+      //     friends: {
+      //       push: parseInt(approverId),
+      //     },
+      //   },
+      // });
+      //send realtime data to requester through pusher so that he also gets the confirmation
+      return res
+        .status(200)
+        .json({ message: `${requesterId} added as friend success` });
+    } else {
+      await prisma.user.update({
+        where: { id: parseInt(approverId) },
+        data: {
+          friends: { pull: parseInt(requesterId) },
+          pendingRequest: { pull: parseInt(requesterId) },
+        },
+      });
+      return res
+        .status(204)
+        .json({ message: `${requesterId} removed success` });
+    }
+    //get added friend data and send it in response
   } catch (error) {
     next(error);
   }
 };
 
-export const getUserList = async (req, res, next) => {
+const getContactList = async (contactIds, next) => {
   try {
-    const { userId } = req.body;
     const prisma = getPrismaInstance();
     const data = await prisma.user.findMany({
       where: {
         id: {
-          in: await prisma.user
-            .findUnique({
-              where: { id: { equals: userId } },
-              select: { pendingRequest: true },
-            })
-            .then((res) => res.map((user) => user.id)),
+          in: contactIds,
         },
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        about: true,
+        profilePicture: true,
+      },
     });
+    console.log("getContactList", data);
+    return data;
   } catch (error) {
     next(error);
   }

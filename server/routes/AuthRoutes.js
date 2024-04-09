@@ -4,7 +4,8 @@ import {
   getAllUsers,
   onBoardUser,
   getOnlineUserStatus,
-  friendRequestHandler
+  friendRequestHandler,
+  addFriend
 } from "../controllers/AuthController.js";
 
 const router = Router();
@@ -13,5 +14,6 @@ router.post("/onBoardUser-user", onBoardUser);
 router.get("/get-contacts/:userId", getAllUsers);
 router.get("/get-user-status/:userId", getOnlineUserStatus);
 router.post("/friend-request", friendRequestHandler);
+router.patch("/friend-request", addFriend);
 
 export default router;
