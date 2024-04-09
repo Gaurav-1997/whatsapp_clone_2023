@@ -1,18 +1,32 @@
-import { calculateTime } from "@/utils/CalculateTime";
-import React, { useRef, useEffect } from "react";
-import { useSelector } from "react-redux";
-import MessageStatus from "@/components/common/MessageStatus";
+import React, { useRef, useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { BsPersonFillCheck, BsPersonX } from "react-icons/bs";
 import ImageMessage from "./ImageMessage";
+import { calculateTime } from "@/utils/CalculateTime";
+import MessageStatus from "@/components/common/MessageStatus";
+import {addOrRejectUser} from "@/features/user/userSlice"
 
 function ChatContainer() {
-  const {userInfo, currentChatUser} = useSelector((state) => state.userReducer);
-  const {messages} = useSelector(state=>state.chatReducer);
+  const dispatch = useDispatch()
+  const { userInfo, currentChatUser } = useSelector(
+    (state) => state.userReducer
+  );
+  const { messages } = useSelector((state) => state.chatReducer);
 
   const chatContainerRef = useRef(null);
 
   useEffect(() => {
     chatContainerRef.current.scrollIntoView(false);
   }, [messages]);
+
+  const [showRequest, setShowRequest] = useState(
+    currentChatUser.pendingRequest
+  );
+
+  const requestHandler = (decision) => {
+    setShowRequest(!decision)
+    dispatch(addOrRejectUser({approverId:userInfo.id, isAccepted:decision, requesterId: currentChatUser.id }))
+  };
 
   return (
     <div className="bg-chat-background object-cover bg-fixed bg-no-repeat w-full relative flex-grow overflow-auto custom-scrollbar scroll-smooth">
@@ -22,42 +36,73 @@ function ChatContainer() {
             className="flex flex-col justify-end w-full gap-1 overflow-auto mx-10 pb-2"
             ref={chatContainerRef}
           >
-            {messages?.map((message, idx) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.senderId === currentChatUser.id
-                    ? "justify-start"
-                    : "justify-end"
-                } px-1 `}
-              >
-                {message.type === "text" && (
+            {showRequest ? (
+              <div className="absolute w-[90%] bottom-2 flex justify-between items-center gap-10 bg-slate-800 rounded-md text-white p-2">
+                <div>This is a friend Request</div>
+
+                <div className="flex gap-2">
+                  <button
+                    className="bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-full p-2 border-[1px] border-slate-700"
+                    onClick={() => requestHandler(true)}
+                  >
+                    <span className="flex gap-1">
+                      <BsPersonFillCheck fill="lightgreen" size={20} />
+                      <span>Confirm Request</span>
+                    </span>
+                  </button>
+                  <button
+                    className="bg-gray-800 hover:bg-slate-700 text-white text-sm rounded-full p-2 border-[1px] border-slate-700"
+                    onClick={() => requestHandler(true)}
+                  >
+                    <span className="flex gap-1">
+                      <BsPersonX fill="red" size={20} />
+                      <span>Reject Request</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {messages?.map((message) => (
                   <div
-                    className={`text-white px-2 py-[5px] text-sm rounded-md flex gap-2 items-end max-w-[70%]
+                    key={message.id}
+                    className={`flex ${
+                      message.senderId === currentChatUser.id
+                        ? "justify-start"
+                        : "justify-end"
+                    } px-1 `}
+                  >
+                    {message.type === "text" && (
+                      <div
+                        className={`text-white px-2 py-[5px] text-sm rounded-md flex gap-2 items-end max-w-[70%]
                   ${
                     message.senderId === currentChatUser.id
                       ? "bg-incoming-background"
                       : "bg-outgoing-background"
                   }`}
-                  >
-                    <span className="break-all">{message.message}</span>
-                    <div className="flex flex-row gap-1 items-end relative">
-                      <span className="block text-bubble-meta text-[10px] pt-1 min-w-fit">
-                        {calculateTime(message?.createdAt)}
-                      </span>
-                      <span className="block">
-                        {message?.senderId === userInfo.id && (
-                          <MessageStatus
-                            messageStatus={message?.messageStatus}
-                          />
-                        )}
-                      </span>
-                    </div>
+                      >
+                        <span className="break-all">{message.message}</span>
+                        <div className="flex flex-row gap-1 items-end relative">
+                          <span className="block text-bubble-meta text-[10px] pt-1 min-w-fit">
+                            {calculateTime(message?.createdAt)}
+                          </span>
+                          <span className="block">
+                            {message?.senderId === userInfo.id && (
+                              <MessageStatus
+                                messageStatus={message?.messageStatus}
+                              />
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {message?.type === "image" && (
+                      <ImageMessage message={message} />
+                    )}
                   </div>
-                )}
-                {message?.type === "image" && <ImageMessage message={message} />}
-              </div>
-            ))}
+                ))}
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -12,12 +12,21 @@ import {
 import { pusherClient } from "@/utils/PusherClient";
 import { BsFillPersonPlusFill } from "react-icons/bs";
 
-function ChatListItem({ data, isContactPage }) {
+function ChatListItem(props) {
+  const {
+    data,
+    isContactPage,
+    friendRequestBtnRequired = true,
+    pendingRequest = false,
+    blocked = false,
+  } = props;
   const { userInfo } = useSelector((reduxState) => reduxState.userReducer);
   const { chatId } = useSelector((reduxState) => reduxState.chatReducer);
   const dispatch = useDispatch();
 
+
   React.useEffect(() => {
+    console.log("friendRequestBtnRequired", friendRequestBtnRequired)
     pusherClient.subscribe(`channel-${chatId}`);
     pusherClient.bind("event:friend-request-sent", frienRequestHandler);
 
@@ -28,7 +37,7 @@ function ChatListItem({ data, isContactPage }) {
   }, []);
 
   const handleContactClick = () => {
-    dispatch(setCurrentChatUser(data));
+    dispatch(setCurrentChatUser({...data, pendingRequest}));
     // close the contactList Page
     // dispatch(setAllContactsPage());
   };
@@ -63,15 +72,18 @@ function ChatListItem({ data, isContactPage }) {
             <div className="text-secondary text-sm line-clamp-1 truncate">
               {data?.about || "\u00A0"}
             </div>
-            <div className="absolute right-2 bottom-1">
-              <button
-                className="add-friend text-cyan text-lg p-3 rounded-full backdrop-blur-md bg-green-900 shadow-sm z-20"
-                onClick={handleFriendRequest}
-                title="Send Friend Request"
-              >
-                <BsFillPersonPlusFill fill="white" />
-              </button>
-            </div>
+
+            {friendRequestBtnRequired && (
+              <div className="absolute right-2 bottom-1">
+                <button
+                  className="add-friend text-cyan text-lg p-3 rounded-full backdrop-blur-md bg-green-900 shadow-sm z-20"
+                  onClick={handleFriendRequest}
+                  title="Send Friend Request"
+                >
+                  <BsFillPersonPlusFill fill="white" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

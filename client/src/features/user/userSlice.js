@@ -7,6 +7,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const initialState = {
+  userLoading:false,
   userInfo: undefined,
   newUser: false,
   contactsPage: false,
@@ -18,6 +19,7 @@ const initialState = {
   allContacts: [],
   onlineUsers: [],
   userPendingRequest: [],
+  loadingContacts:false
 };
 
 export const getAllContacts = createAsyncThunk("getAllContacts", async (id) => {
@@ -60,6 +62,18 @@ export const sendFriendRequest = createAsyncThunk(
   }
 );
 
+export const addOrRejectUser = createAsyncThunk(
+  "addOrRejectUser",
+  async (params = {}) => {
+    try {
+      console.log({ ...params });
+      const response = await axios.patch(FRIEND_REQUEST_ROUTE, { ...params });
+      return response;
+    } catch (error) {
+      console.error("Error Friend Request sent", error);
+    }
+  }
+);
 export const userSlice = createSlice({
   name: "userInfo",
   initialState,
@@ -97,6 +111,13 @@ export const userSlice = createSlice({
       state.userPendingRequest = [action.payload, ...state.userPendingRequest];
       console.log("userPendingRequest", state.userPendingRequest);
     },
+    setUserLoading:(state, action)=>{
+      state.userLoading = action.payload;
+    },
+    setLoadingContacts:(state, action)=>{
+      state.loadingContacts = action.payload
+    }
+    
   },
   extraReducers: (builder) => {
     builder.addCase(getAllContacts.pending, (state) => {
@@ -128,6 +149,8 @@ export const {
   addMessage,
   setOnlineUsers,
   setPendingRequest,
+  setUserLoading,
+  setLoadingContacts
 } = userSlice.actions;
 
 export default userSlice.reducer;

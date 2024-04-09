@@ -6,9 +6,12 @@ import { onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth } from "@/utils/FirebaseConfig";
 import { useDispatch, useSelector } from "react-redux";
 import { CHECK_USER_ROUTE } from "@/utils/ApiRoutes";
-import { setUser, setOnlineUsers } from "@/features/user/userSlice";
+import {
+  setUser,
+  setOnlineUsers,
+  setUserLoading,
+} from "@/features/user/userSlice";
 import { getMessages, setChatId } from "@/features/chat/chatSlice";
-import { listenHook } from "@/hooks/listenhook";
 import preLoadIt from "@/preLoaded/preLoadIt";
 import { pusherClient } from "@/utils/PusherClient";
 
@@ -25,9 +28,7 @@ function Main() {
   const dispatch = useDispatch();
   const [redirectLogin, setRedirectLogin] = useState(false);
 
-  const { searchMessage } = useSelector(
-    (reduxState) => reduxState.chatReducer
-  );
+  const { searchMessage } = useSelector((reduxState) => reduxState.chatReducer);
   let { userInfo, currentChatUser } = useSelector(
     (reduxState) => reduxState.userReducer
   );
@@ -36,19 +37,21 @@ function Main() {
     if (redirectLogin) router.push("/login");
   }, [redirectLogin]);
 
-  useEffect(()=>{
-    pusherClient.subscribe('channel:onlineUsers')
+  useEffect(() => {
+    pusherClient.subscribe("channel:onlineUsers");
 
-    function getOnlineUsersList(onlineUsers){
-      dispatch(setOnlineUsers(onlineUsers))
+    function getOnlineUsersList(onlineUsers) {
+      dispatch(setOnlineUsers(onlineUsers));
     }
-    pusherClient.bind('onlineUsers:data',(onlineUsers)=>getOnlineUsersList(onlineUsers))
+    pusherClient.bind("onlineUsers:data", (onlineUsers) =>
+      getOnlineUsersList(onlineUsers)
+    );
 
     return () => {
-      pusherClient.unsubscribe('onlineUsers');
+      pusherClient.unsubscribe("onlineUsers");
       pusherClient.unbind("onlineUsers:data", getOnlineUsersList);
     };
-  },[])
+  }, []);
 
   useEffect(() => {
     if (currentChatUser) {
@@ -63,23 +66,34 @@ function Main() {
     if (!currentUser) setRedirectLogin(true);
     if (!userInfo && currentUser?.email) {
       // console.log("currentuser from main.jsx", currentUser);
-      const { data } = await axios.post(CHECK_USER_ROUTE, {
-        email: currentUser.email,
-      });
-      if (!data.status) {
-        router.push("/login");
-      }
-      // console.log(data);
-      if (data?.data) {
-        userInfo = {
-          id: data.data.id,
-          name: data.data.name,
-          email: data.data.email,
-          profilePicture: data.data.profilePicture,
-          status: data.data.about
-        };
-        dispatch(setChatId(data.data.pusherId));
-        dispatch(setUser(userInfo));
+      try {
+        dispatch(setUserLoading(true));
+        const { data } = await axios.post(CHECK_USER_ROUTE, {
+          email: currentUser.email,
+        });
+        if (!data.status) {
+          router.push("/login");
+        }
+        // console.log(data);
+        if (data?.data) {
+          userInfo = {
+            id: data.data.id,
+            name: data.data.name,
+            email: data.data.email,
+            profilePicture: data.data.profilePicture,
+            status: data.data.about,
+            friends: data.data.friends,
+            pendingRequest: data.data.pendingRequest,
+            blockedUsers: data.data.blockedUsers,
+          };
+          dispatch(setChatId(data.data.pusherId));
+          dispatch(setUser(userInfo));
+          dispatch(setUserLoading(false));
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        dispatch(setUserLoading(false));
       }
     }
   });
