@@ -49,7 +49,7 @@ export const onBoardUser = async (req, res, next) => {
         .substring(0, 6)
     );
     const user = await prisma.user.create({
-      data: { email, name, profilePicture, about },
+      data: { id, email, name, profilePicture, about },
     });
     console.log("user", user);
     res.status(201).json({ message: "Success", status: true, user });
@@ -135,7 +135,7 @@ export const friendRequestHandler = async (req, res, next) => {
           pendingRequest: false,
         },
       });
-      pusherServer.trigger(`channel-${chatId}`, "event:friend-request-sent", {
+      pusherServer.trigger(`channel-${chatId}`, "incoming-friend-request", {
         requester: user,
       });
     }
@@ -143,7 +143,7 @@ export const friendRequestHandler = async (req, res, next) => {
     //   return res.status(409).json({message:'User already a friend or pendingRequest'})
     // }
     // store request in db whether user online or offline
-    const pendingRequest = await prisma.user.update({
+    await prisma.user.update({
       where: { id: parseInt(to) },
       data: {
         pendingRequest: {
@@ -151,7 +151,7 @@ export const friendRequestHandler = async (req, res, next) => {
         },
       },
     });
-    return res.status(200).json(pendingRequest);
+    return res.status(200).json({ message: "added in pendingRequest db" });
   } catch (error) {
     next(error);
   }
@@ -167,19 +167,20 @@ export const addFriend = async (req, res, next) => {
       requesterId,
       isAccepted
     );
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(approverId) },
+      select: {
+        pendingRequest: true,
+      },
+    });
+    //remove requesterId from pendingRequest list
+    const updatedList = [
+      ...new Set(user.pendingRequest.filter((id) => id !== requesterId)),
+    ];
+    console.log(updatedList);
     if (isAccepted) {
       //adding friend for approver
-      const user = await prisma.user.findUnique({
-        where: { id: parseInt(approverId) },
-        select: {
-          pendingRequest: true,
-        },
-      });
-      const updatedList = [
-        ...new Set(user.pendingRequest.filter((id) => id !== requesterId)),
-      ];
-      console.log(updatedList);
-
+      console.log("adding friend for approver")
       await prisma.user.update({
         where: { id: parseInt(approverId) },
         data: {
@@ -192,29 +193,52 @@ export const addFriend = async (req, res, next) => {
         },
       });
       //adding friend for requester also
-      // await prisma.user.update({
-      //   where: { id: parseInt(requesterId) },
-      //   data: {
-      //     friends: {
-      //       push: parseInt(approverId),
-      //     },
-      //   },
-      // });
+      console.log("adding friend for requester also")
+      await prisma.user.update({
+        where: { id: parseInt(requesterId) },
+        data: {
+          friends: {
+            push: parseInt(approverId),
+          },
+        },
+      });
+
       //send realtime data to requester through pusher so that he also gets the confirmation
-      return res
-        .status(200)
-        .json({ message: `${requesterId} added as friend success` });
+      const chatId = global.onlineUsers.get(requesterId);
+      if(chatId){
+        const approverData = await prisma.user.findFirst({
+          where: { id: approverId },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            profilePicture: true,
+          },
+        });
+        pusherServer.trigger(
+          `channel-${chatId}`,
+          "friend-request-accepted",
+          approverData
+        );
+      }
+        
+      return res.status(200).json({
+        message: `${requesterId} added as friend success`,
+        isAccepted: true,
+        requesterId,
+      });
     } else {
       await prisma.user.update({
         where: { id: parseInt(approverId) },
         data: {
-          friends: { pull: parseInt(requesterId) },
-          pendingRequest: { pull: parseInt(requesterId) },
+          pendingRequest: { set: updatedList },
         },
       });
-      return res
-        .status(204)
-        .json({ message: `${requesterId} removed success` });
+      return res.status(204).json({
+        message: `${requesterId} removed success`,
+        isAccepted: false,
+        requesterId,
+      });
     }
     //get added friend data and send it in response
   } catch (error) {

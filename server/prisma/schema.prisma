@@ -18,16 +18,16 @@ datasource db {
 }
 
 model User {
-  id               Int        @id @default(autoincrement())
+  id               Int        @id
   email            String     @unique
   name             String
   profilePicture   String     @default("")
   about            String     @default("")
   sentMessages     Messages[] @relation("sentMessages")
   recievedMessages Messages[] @relation("recievedMessages")
-  friends          Int[]     @unique
-  blockedUsers     Int[]     @unique
-  pendingRequest   Int[]     @unique
+  friends          Int[]     
+  blockedUsers     Int[]     
+  pendingRequest   Int[]     
 }
 
 model Messages {
