@@ -8,7 +8,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { CHECK_USER_ROUTE } from "@/utils/ApiRoutes";
 import {
   setUser,
-  setOnlineUsers,
   setUserLoading,
 } from "@/features/user/userSlice";
 import { getMessages, setChatId } from "@/features/chat/chatSlice";
@@ -23,12 +22,12 @@ const SearchMessages = dynamic(() => import("./Chat/SearchMessages"));
 function Main() {
   const router = useRouter();
 
-  preLoadIt();
+  // preLoadIt();
 
   const dispatch = useDispatch();
   const [redirectLogin, setRedirectLogin] = useState(false);
 
-  const { searchMessage } = useSelector((reduxState) => reduxState.chatReducer);
+  const { searchMessage, chatId } = useSelector((reduxState) => reduxState.chatReducer);
   let { userInfo, currentChatUser } = useSelector(
     (reduxState) => reduxState.userReducer
   );
@@ -37,21 +36,21 @@ function Main() {
     if (redirectLogin) router.push("/login");
   }, [redirectLogin]);
 
-  useEffect(() => {
-    pusherClient.subscribe("channel:onlineUsers");
+  // useEffect(() => {
+  //   pusherClient.subscribe("channel:onlineUsers");
 
-    function getOnlineUsersList(onlineUsers) {
-      dispatch(setOnlineUsers(onlineUsers));
-    }
-    pusherClient.bind("onlineUsers:data", (onlineUsers) =>
-      getOnlineUsersList(onlineUsers)
-    );
+  //   function getOnlineUsersList(onlineUsers) {
+  //     dispatch(setOnlineUsers(onlineUsers));
+  //   }
+  //   pusherClient.bind("onlineUsers:data", (onlineUsers) =>
+  //     getOnlineUsersList(onlineUsers)
+  //   );
 
-    return () => {
-      pusherClient.unsubscribe("onlineUsers");
-      pusherClient.unbind("onlineUsers:data", getOnlineUsersList);
-    };
-  }, []);
+  //   return () => {
+  //     pusherClient.unsubscribe("onlineUsers");
+  //     pusherClient.unbind("onlineUsers:data", getOnlineUsersList);
+  //   };
+  // }, []);
 
   useEffect(() => {
     if (currentChatUser) {

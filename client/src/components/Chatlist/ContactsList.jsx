@@ -1,4 +1,4 @@
-import React,{useEffect} from "react";
+import React, { useEffect } from "react";
 import { setAllContactsPage } from "@/features/user/userSlice";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import { useDispatch, useSelector } from "react-redux";
@@ -12,9 +12,9 @@ function ContactsList() {
   );
   const dispatch = useDispatch();
 
-  useEffect(()=>{
-    console.log(userInfo.pendingRequest)
-  },[])
+  useEffect(() => {
+    console.log("pendingRequest", userInfo.pendingRequest);
+  }, []);
 
   return (
     <div className="h-full flex flex-col">
@@ -45,7 +45,7 @@ function ContactsList() {
         </div>
 
         {isLoading ? (
-          [...Array(3).keys()].map ((_, idx) => 
+          [...Array(3).keys()].map((_, idx) => (
             <div key={idx}>
               <div className="shadow rounded-md p-4 max-w-xl w-full m-auto">
                 <div className="animate-pulse flex space-x-4">
@@ -62,7 +62,7 @@ function ContactsList() {
                 </div>
               </div>
             </div>
-          )
+          ))
         ) : (
           <>
             {Object.entries(allContacts).map(([initialLetter, userList]) => {
@@ -71,13 +71,18 @@ function ContactsList() {
                   <div className="text-teal-light pl-2 py-2">
                     {initialLetter}
                     {userList.map((contact) => {
-                      console.log("!userInfo.pendingRequest.includes(contact.id)", !userInfo.pendingRequest.includes(contact.id))
+                      console.log(
+                        "!userInfo.pendingRequest.includes(contact.id)",
+                        !userInfo.pendingRequest.includes(contact.id)
+                      );
                       return (
                         <ChatListItem
                           data={contact}
                           isContactPage={true}
                           key={contact.id}
-                          friendRequestBtnRequired={!userInfo.pendingRequest.filter(user=>user.id===contact.id)}
+                          // friendRequestBtnRequired={() =>
+                          //   checkIfContactExists(contact.id)
+                          // }
                         />
                       );
                     })}

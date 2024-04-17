@@ -7,7 +7,7 @@ import {
 } from "@/features/user/userSlice";
 import {
   sendFriendRequest,
-  setPendingRequest,
+  setUser,
 } from "@/features/user/userSlice";
 import { pusherClient } from "@/utils/PusherClient";
 import { BsFillPersonPlusFill } from "react-icons/bs";
@@ -19,33 +19,54 @@ function ChatListItem(props) {
     friendRequestBtnRequired = true,
     pendingRequest = false,
     blocked = false,
+    bgColor,
   } = props;
-  const { userInfo } = useSelector((reduxState) => reduxState.userReducer);
+  const { userInfo, contactsPage } = useSelector(
+    (reduxState) => reduxState.userReducer
+  );
   const { chatId } = useSelector((reduxState) => reduxState.chatReducer);
   const dispatch = useDispatch();
 
-
   React.useEffect(() => {
-    console.log("friendRequestBtnRequired", friendRequestBtnRequired)
+    // console.log("friendRequestBtnRequired", friendRequestBtnRequired);
     pusherClient.subscribe(`channel-${chatId}`);
-    pusherClient.bind("event:friend-request-sent", frienRequestHandler);
+    pusherClient.bind("incoming-friend-request", frienRequestHandler);
 
     return () => {
       pusherClient.unsubscribe(`channel-${chatId}`);
-      pusherClient.unbind("event:friend-request-sent", frienRequestHandler);
+      pusherClient.unbind("incoming-friend-request", frienRequestHandler);
     };
-  }, []);
+  }, [userInfo]);
+
+  const checkIfContactExists = (contactId) => {
+    if (userInfo.friends.filter((user) => user.id === contactId).length > 0) {
+      // false show no friend btn
+      console.log("freind", contactId, userInfo.friends.filter((user) => user.id === contactId))
+      return false;
+    } else if (
+      userInfo.pendingRequest.filter((user) => user.id === contactId).length > 0
+    ) {
+      return false;
+    }
+    console.log("show frnd btn", contactId, false);
+    return true;
+  };
 
   const handleContactClick = () => {
-    dispatch(setCurrentChatUser({...data, pendingRequest}));
+    // adding pending request to CurrentChatUser to display the accept & reject request
+    console.log("handleContactClick", pendingRequest);
+    dispatch(setCurrentChatUser({ ...data, pendingRequest }));
     // close the contactList Page
     // dispatch(setAllContactsPage());
   };
 
   const frienRequestHandler = (data) => {
-    console.log(data);
-    if (data.requesterId !== userInfo.id)
-      dispatch(setPendingRequest(data.requester));
+    if (data.requester.id !== userInfo?.id){
+      const {pendingRequest, ...rest} = userInfo
+      const currPendingRequest = [data.requester, ...pendingRequest]
+      const updatedUserInfo = {...rest, pendingRequest: currPendingRequest}
+      dispatch(setUser(updatedUserInfo));
+    }
   };
 
   const handleFriendRequest = async () => {
@@ -55,7 +76,7 @@ function ChatListItem(props) {
 
   return (
     <div
-      className={`flex cursor-pointer items-center hover:bg-background-default-hover rounded-lg relative`}
+      className={`flex cursor-pointer items-center bg-${bgColor} hover:bg-background-default-hover rounded-lg relative`}
       onClick={handleContactClick}
     >
       <div className="min-w-fit px-5 pt-3 pb-1">
@@ -73,7 +94,7 @@ function ChatListItem(props) {
               {data?.about || "\u00A0"}
             </div>
 
-            {friendRequestBtnRequired && (
+            {contactsPage && checkIfContactExists(data?.id) && (
               <div className="absolute right-2 bottom-1">
                 <button
                   className="add-friend text-cyan text-lg p-3 rounded-full backdrop-blur-md bg-green-900 shadow-sm z-20"

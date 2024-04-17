@@ -4,7 +4,7 @@ import { BsPersonFillCheck, BsPersonX } from "react-icons/bs";
 import ImageMessage from "./ImageMessage";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
-import {addOrRejectUser} from "@/features/user/userSlice"
+import {addOrRejectUser, setCurrentChatUser} from "@/features/user/userSlice"
 
 function ChatContainer() {
   const dispatch = useDispatch()
@@ -19,12 +19,9 @@ function ChatContainer() {
     chatContainerRef.current.scrollIntoView(false);
   }, [messages]);
 
-  const [showRequest, setShowRequest] = useState(
-    currentChatUser.pendingRequest
-  );
 
   const requestHandler = (decision) => {
-    setShowRequest(!decision)
+    dispatch(setCurrentChatUser({...currentChatUser, pendingRequest: !decision}));
     dispatch(addOrRejectUser({approverId:userInfo.id, isAccepted:decision, requesterId: currentChatUser.id }))
   };
 
@@ -36,7 +33,7 @@ function ChatContainer() {
             className="flex flex-col justify-end w-full gap-1 overflow-auto mx-10 pb-2"
             ref={chatContainerRef}
           >
-            {showRequest ? (
+            {currentChatUser.pendingRequest ? (
               <div className="absolute w-[90%] bottom-2 flex justify-between items-center gap-10 bg-slate-800 rounded-md text-white p-2">
                 <div>This is a friend Request</div>
 

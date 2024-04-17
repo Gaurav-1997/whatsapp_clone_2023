@@ -9,18 +9,18 @@ import { setSearchMessage } from "@/features/chat/chatSlice";
 import { getUserStatus } from "@/features/user/userSlice";
 
 function ChatHeader() {
-  const { currentChatUser, currentChatUserStatus, onlineUsers } = useSelector(
+  const { currentChatUser, currentChatUserStatus } = useSelector(
     (state) => state.userReducer
   );
   const dispatch = useDispatch();
-  const [userStatus, setUserStatus] = React.useState(false);
+  // const [userStatus, setUserStatus] = React.useState(false);
 
   useEffect(() => {
     dispatch(getUserStatus(currentChatUser?.id));
     console.log(currentChatUser.id, currentChatUserStatus);
-    setUserStatus(onlineUsers.includes(currentChatUser?.id));
-    console.log("onlineUsers", onlineUsers);
-  }, [onlineUsers]);
+    // setUserStatus(onlineUsers.includes(currentChatUser?.id));
+    // console.log("onlineUsers", onlineUsers);
+  }, []);
 
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center bg-panel-header-background z-10">
@@ -51,4 +51,4 @@ function ChatHeader() {
   );
 }
 
-export default ChatHeader;
+export default React.memo(ChatHeader);

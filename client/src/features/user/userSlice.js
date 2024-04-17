@@ -136,6 +136,20 @@ export const userSlice = createSlice({
     builder.addCase(getUserStatus.rejected, (state, action) => {
       console.error(action.payload);
     });
+    builder.addCase(addOrRejectUser.fulfilled, (state, action)=>{
+      console.log("addOrRejectUser", action.payload )
+      if(action.payload.isAccepted){
+        const replacePendingRequest = state.userInfo.pendingRequest.filter(user=>user.id !== action.payload.requesterId)
+        const addInFriends = state.userInfo.pendingRequest.filter(user=>user.id === action.payload.requesterId)
+        const {pendingRequest, friends,...rest} = state.userInfo;
+        const updatedFriends = [addInFriends[0], ...friends]
+        state.userInfo = {...rest, friends: updatedFriends, pendingRequest: replacePendingRequest }
+      }else if(!action.payload.isAccepted){
+        const replacePendingRequest = state.userInfo.pendingRequest.filter(user=>user.id !== action.payload.requesterId)
+        const {pendingRequest, ...rest} = state.userInfo;
+        state.userInfo = {...rest, pendingRequest: replacePendingRequest}
+      }
+    })
   },
 });
 

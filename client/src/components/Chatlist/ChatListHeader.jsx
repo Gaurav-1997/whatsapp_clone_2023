@@ -3,10 +3,12 @@ import Avatar from "../common/Avatar";
 import { useSelector, useDispatch } from "react-redux";
 import { BsFillChatLeftTextFill, BsThreeDotsVertical } from "react-icons/bs";
 import { setAllContactsPage } from "../../features/user/userSlice";
+import preLoadIt from "@/preLoaded/preLoadIt";
 
 function ChatListHeader() {
   const { userInfo, userLoading } = useSelector((state) => state.userReducer);
   const dispatch = useDispatch();
+  preLoadIt();
 
   const handleAllContactsPage = () => {
     dispatch(setAllContactsPage());

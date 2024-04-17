@@ -26,6 +26,8 @@ function Chat() {
     };
   }, [chatId]);
 
+  
+
   return (
     <div className="border-conversation-border border-l bg-conversation-panel-background flex flex-col h-[100vh] z-10">
       <ChatHeader />
