@@ -7,7 +7,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const initialState = {
-  userLoading:false,
+  userLoading: false,
   userInfo: undefined,
   newUser: false,
   contactsPage: false,
@@ -16,18 +16,23 @@ const initialState = {
   allUsers: [],
   messages: [],
   isLoading: false,
-  allContacts: [],
+  allContacts: {},
   onlineUsers: [],
   userPendingRequest: [],
-  loadingContacts:false
+  loadingContacts: false,
+  toastMessage:'',
+  showToastMessage: false,
+  showLoadingToast: false,
+  toastStatus:''
 };
 
 export const getAllContacts = createAsyncThunk("getAllContacts", async (id) => {
   try {
-    // console.log('userInfo.id', id);
+    console.log('getAllContacts for id:', id);
     const {
       data: { users },
     } = await axios.get(`${GET_ALL_CONTACTS}/${id}`);
+    console.log('getAllContacts', users);
     return users;
   } catch (error) {
     console.log(error);
@@ -54,8 +59,9 @@ export const sendFriendRequest = createAsyncThunk(
   async (params = {}) => {
     try {
       console.log({ ...params });
-      const response = await axios.post(FRIEND_REQUEST_ROUTE, { ...params });
-      return response;
+      const {data} = await axios.post(FRIEND_REQUEST_ROUTE, { ...params });
+      console.log('sendFriendRequest response:', data)
+      return data;
     } catch (error) {
       console.error("Error Friend Request sent", error);
     }
@@ -111,13 +117,13 @@ export const userSlice = createSlice({
       state.userPendingRequest = [action.payload, ...state.userPendingRequest];
       console.log("userPendingRequest", state.userPendingRequest);
     },
-    setUserLoading:(state, action)=>{
+    setUserLoading: (state, action) => {
+      console.log("setUserLoading", action.payload);
       state.userLoading = action.payload;
     },
-    setLoadingContacts:(state, action)=>{
-      state.loadingContacts = action.payload
-    }
-    
+    setLoadingContacts: (state, action) => {
+      state.loadingContacts = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(getAllContacts.pending, (state) => {
@@ -136,20 +142,49 @@ export const userSlice = createSlice({
     builder.addCase(getUserStatus.rejected, (state, action) => {
       console.error(action.payload);
     });
-    builder.addCase(addOrRejectUser.fulfilled, (state, action)=>{
-      console.log("addOrRejectUser", action.payload )
-      if(action.payload.isAccepted){
-        const replacePendingRequest = state.userInfo.pendingRequest.filter(user=>user.id !== action.payload.requesterId)
-        const addInFriends = state.userInfo.pendingRequest.filter(user=>user.id === action.payload.requesterId)
-        const {pendingRequest, friends,...rest} = state.userInfo;
-        const updatedFriends = [addInFriends[0], ...friends]
-        state.userInfo = {...rest, friends: updatedFriends, pendingRequest: replacePendingRequest }
-      }else if(!action.payload.isAccepted){
-        const replacePendingRequest = state.userInfo.pendingRequest.filter(user=>user.id !== action.payload.requesterId)
-        const {pendingRequest, ...rest} = state.userInfo;
-        state.userInfo = {...rest, pendingRequest: replacePendingRequest}
+    builder.addCase(sendFriendRequest.pending, (state) => {
+      state.userLoading = true;
+      state.showLoadingToast = !state.showLoadingToast;
+      state.toastStatus = 'loading';
+      state.toastMessage = 'Sending Request';
+    });
+    builder.addCase(sendFriendRequest.fulfilled,(state, action) => {
+      console.log("fulfilled")
+      state.userLoading = false;      
+      state.userInfo = action.payload.user;
+      state.showToastMessage = !state.showToastMessage;
+      state.toastStatus = 'success';
+      state.toastMessage = action.payload.message;
+    });
+    builder.addCase(sendFriendRequest.rejected, (state, action) => {
+      state.showToastMessage = !state.showToastMessage;
+      state.toastStatus = 'error';
+      state.showToastMessage = action.payload.message;
+    });
+    builder.addCase(addOrRejectUser.fulfilled, (state, action) => {
+      console.log("addOrRejectUser", action.payload);
+      if (action.payload.isAccepted) {
+        const replacePendingRequest = state.userInfo.pendingRequest.filter(
+          (user) => user.id !== action.payload.requesterId
+        );
+        const addInFriends = state.userInfo.pendingRequest.filter(
+          (user) => user.id === action.payload.requesterId
+        );
+        const { pendingRequest, friends, ...rest } = state.userInfo;
+        const updatedFriends = [addInFriends[0], ...friends];
+        state.userInfo = {
+          ...rest,
+          friends: updatedFriends,
+          pendingRequest: replacePendingRequest,
+        };
+      } else if (!action.payload.isAccepted) {
+        const replacePendingRequest = state.userInfo.pendingRequest.filter(
+          (user) => user.id !== action.payload.requesterId
+        );
+        const { pendingRequest, ...rest } = state.userInfo;
+        state.userInfo = { ...rest, pendingRequest: replacePendingRequest };
       }
-    })
+    });
   },
 });
 
@@ -164,7 +199,7 @@ export const {
   setOnlineUsers,
   setPendingRequest,
   setUserLoading,
-  setLoadingContacts
+  setLoadingContacts,
 } = userSlice.actions;
 
 export default userSlice.reducer;

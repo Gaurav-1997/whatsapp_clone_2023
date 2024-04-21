@@ -29,11 +29,11 @@ function List() {
   }, [userInfo]);
 
   React.useEffect(() => {
-    // if(userInfo){
+    
       pusherClient.subscribe(`channel-${chatId}`);
       pusherClient.bind("friend-request-accepted", requestAcceptedHandler);
       console.log('listening on', `channel-${chatId}`)
-    // }
+    
     return () => {
       pusherClient.unsubscribe(`channel-${chatId}`);
       pusherClient.unbind("friend-request-accepted", requestAcceptedHandler);
