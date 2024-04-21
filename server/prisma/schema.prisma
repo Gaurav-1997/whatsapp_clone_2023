@@ -34,29 +34,34 @@ enum MessageDeliveryStaus {
 }
 
 model User {
-  id                  Int               @id
-  email               String            @unique
+  id                  Int        @id
+  email               String     @unique
   name                String
-  profilePicture      String?           @default("")
-  about               String?           @default("")
-  status              String?           @default("")
+  profilePicture      String?    @default("")
+  about               String?    @default("")
+  status              String?    @default("")
   friends             Int[]
   blockedUsers        Int[]
   pendingRequest      Int[]
   requestSentTo       Int[]
-  messages            Messages[]        @relation("sentMessages")
-  chat                Chat[]            @relation("relatedChat")
-  groupParticipant    GroupParticipant? @relation(fields: [groupParticipant_id], references: [group_id])
-  groupParticipant_id Int?
+  messages            Messages[] @relation("sentMessages")
+  chat                Chat[]     @relation("chatUser")
+  last_message_sender Chat?
+  // groupParticipant    GroupParticipant @relation(fields: [groupParticipant_id], references: [group_id])
+  // groupParticipant_id Int?
 }
 
 model Chat {
-  chat_id      String            @id @default(cuid())
-  type         ChatType          @default(PRIVATE)
-  sender_id    Int
-  sender       User              @relation("relatedChat", fields: [sender_id], references: [id])
-  last_message Messages?         @relation("lastMessage")
-  groupChat    GroupParticipant? @relation("groupChat")
+  chat_id                String   @id @default(cuid())
+  type                   ChatType  @default(PRIVATE)
+  // sender_id    Int
+  admin_email            String?   @unique
+  group_chat_name        String?
+  chatUser               User[]    @relation("chatUser")
+  last_message           Messages? @relation("lastMessage")
+  last_message_sender    User?     @relation(fields: [last_message_sender_id], references: [id])
+  last_message_sender_id Int?      @unique
+  // groupChat           GroupParticipant
 }
 
 model Messages {
@@ -72,11 +77,11 @@ model Messages {
 }
 
 // Group Participants Table
-model GroupParticipant {
-  group_id   Int    @id
-  group_name String
-  groupAdmin String
-  chat       Chat   @relation("groupChat", fields: [chat_id], references: [chat_id])
-  chat_id    String @unique
-  user       User[]
-}
+// model GroupParticipant {
+//   group_id   Int    @id
+//   group_name String
+//   groupAdmin String
+//   chat       Chat   @relation("groupChat", fields: [chat_id], references: [chat_id])
+//   chat_id    String @unique
+//   user       User[]
+// }
