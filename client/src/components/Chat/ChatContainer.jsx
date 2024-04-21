@@ -15,9 +15,9 @@ function ChatContainer() {
 
   const chatContainerRef = useRef(null);
 
-  useEffect(() => {
-    chatContainerRef.current.scrollIntoView(false);
-  }, [messages]);
+  // useEffect(() => {
+  //   chatContainerRef.current.scrollIntoView(false);
+  // }, [messages]);
 
 
   const requestHandler = (decision) => {
@@ -33,7 +33,7 @@ function ChatContainer() {
             className="flex flex-col justify-end w-full gap-1 overflow-auto mx-10 pb-2"
             ref={chatContainerRef}
           >
-            {currentChatUser.pendingRequest ? (
+            {currentChatUser.pendingRequest.length>0 ? (
               <div className="absolute w-[90%] bottom-2 flex justify-between items-center gap-10 bg-slate-800 rounded-md text-white p-2">
                 <div>This is a friend Request</div>
 
@@ -60,7 +60,7 @@ function ChatContainer() {
               </div>
             ) : (
               <>
-                {messages?.map((message) => (
+                {/* {messages?.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${
@@ -97,7 +97,7 @@ function ChatContainer() {
                       <ImageMessage message={message} />
                     )}
                   </div>
-                ))}
+                ))} */}
               </>
             )}
           </div>

@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 const ChatListItem = dynamic(() => import("./ChatListItem"));
 
 function ContactsList() {
-  const { isLoading, allContacts, userInfo } = useSelector(
+  const { isLoading, allContacts={}, userInfo } = useSelector(
     (reduxState) => reduxState.userReducer
   );
   const dispatch = useDispatch();
@@ -65,24 +65,17 @@ function ContactsList() {
           ))
         ) : (
           <>
-            {Object.entries(allContacts).map(([initialLetter, userList]) => {
+            {Object.entries(allContacts)?.map(([initialLetter, userList]) => {
               return (
                 <div key={Date.now() + initialLetter}>
                   <div className="text-teal-light pl-2 py-2">
                     {initialLetter}
-                    {userList.map((contact) => {
-                      console.log(
-                        "!userInfo.pendingRequest.includes(contact.id)",
-                        !userInfo.pendingRequest.includes(contact.id)
-                      );
+                    {userList.map((contact) => {                      
                       return (
                         <ChatListItem
                           data={contact}
                           isContactPage={true}
-                          key={contact.id}
-                          // friendRequestBtnRequired={() =>
-                          //   checkIfContactExists(contact.id)
-                          // }
+                          key={contact.id}                         
                         />
                       );
                     })}

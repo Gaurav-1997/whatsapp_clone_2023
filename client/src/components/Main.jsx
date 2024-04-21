@@ -6,13 +6,9 @@ import { onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth } from "@/utils/FirebaseConfig";
 import { useDispatch, useSelector } from "react-redux";
 import { CHECK_USER_ROUTE } from "@/utils/ApiRoutes";
-import {
-  setUser,
-  setUserLoading,
-} from "@/features/user/userSlice";
+import { setUser, setUserLoading } from "@/features/user/userSlice";
 import { getMessages, setChatId } from "@/features/chat/chatSlice";
-import preLoadIt from "@/preLoaded/preLoadIt";
-import { pusherClient } from "@/utils/PusherClient";
+import { Toaster, toast } from "react-hot-toast";
 
 const ChatList = dynamic(() => import("./Chatlist/ChatList"));
 const Empty = dynamic(() => import("./Empty"));
@@ -21,44 +17,65 @@ const SearchMessages = dynamic(() => import("./Chat/SearchMessages"));
 
 function Main() {
   const router = useRouter();
+  let {
+    userInfo,
+    currentChatUser,
+    toastMessage,
+    showToastMessage,
+    showLoadingToast,
+    toastStatus,
+  } = useSelector((reduxState) => reduxState.userReducer);
 
-  // preLoadIt();
+  useEffect(() => {
+    console.log("toast called");
+    const toastStyle = {
+      background: "#181a1b",
+      fontSize: "2rem",
+      fontWeight: "normal",
+      color: "whitesmoke",
+      marginBottom: "20px",
+    };
+
+    if (toastMessage) {
+      if (toastStatus === "loading") {
+        toast.loading(toastMessage, {
+          position: "bottom-left",
+          style: toastStyle,
+          duration: 3000,
+        });
+      } else if (toastStatus === "success") {
+        toast.success(toastMessage, {
+          position: "bottom-left",
+          style: toastStyle,
+          duration: 3000,
+        });
+      } else {
+        toast.error(toastMessage, {
+          position: "bottom-left",
+          style: toastStyle,
+          duration: 3000,
+        });
+      }
+    }
+  }, [toastMessage, showToastMessage, showLoadingToast, toastStatus]);
 
   const dispatch = useDispatch();
   const [redirectLogin, setRedirectLogin] = useState(false);
 
-  const { searchMessage, chatId } = useSelector((reduxState) => reduxState.chatReducer);
-  let { userInfo, currentChatUser } = useSelector(
-    (reduxState) => reduxState.userReducer
-  );
+  const { searchMessage } = useSelector((reduxState) => reduxState.chatReducer);
+  // preLoadIt()
 
   useEffect(() => {
     if (redirectLogin) router.push("/login");
   }, [redirectLogin]);
 
   // useEffect(() => {
-  //   pusherClient.subscribe("channel:onlineUsers");
-
-  //   function getOnlineUsersList(onlineUsers) {
-  //     dispatch(setOnlineUsers(onlineUsers));
+  //   if (currentChatUser) {
+  //     dispatch(
+  //       getMessages({ senderId: userInfo?.id, recieverId: currentChatUser?.id })
+  //     );
   //   }
-  //   pusherClient.bind("onlineUsers:data", (onlineUsers) =>
-  //     getOnlineUsersList(onlineUsers)
-  //   );
-
-  //   return () => {
-  //     pusherClient.unsubscribe("onlineUsers");
-  //     pusherClient.unbind("onlineUsers:data", getOnlineUsersList);
-  //   };
-  // }, []);
-
-  useEffect(() => {
-    if (currentChatUser) {
-      dispatch(
-        getMessages({ senderId: userInfo?.id, recieverId: currentChatUser?.id })
-      );
-    }
-  }, [currentChatUser]);
+  // }, [currentChatUser]);
 
   // it is like useEffect. it will run when the page refreshes
   onAuthStateChanged(firebaseAuth, async (currentUser) => {
@@ -84,6 +101,7 @@ function Main() {
             friends: data.data.friends,
             pendingRequest: data.data.pendingRequest,
             blockedUsers: data.data.blockedUsers,
+            requestSentTo: data.data.requestSentTo,
           };
           dispatch(setChatId(data.data.pusherId));
           dispatch(setUser(userInfo));
@@ -112,6 +130,7 @@ function Main() {
         ) : (
           <Empty />
         )}
+        <Toaster />
       </div>
     </>
   );

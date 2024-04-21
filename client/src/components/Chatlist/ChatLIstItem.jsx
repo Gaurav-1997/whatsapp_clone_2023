@@ -5,10 +5,7 @@ import {
   setAllContactsPage,
   setCurrentChatUser,
 } from "@/features/user/userSlice";
-import {
-  sendFriendRequest,
-  setUser,
-} from "@/features/user/userSlice";
+import { sendFriendRequest, setUser } from "@/features/user/userSlice";
 import { pusherClient } from "@/utils/PusherClient";
 import { BsFillPersonPlusFill } from "react-icons/bs";
 
@@ -39,13 +36,12 @@ function ChatListItem(props) {
   }, [userInfo]);
 
   const checkIfContactExists = (contactId) => {
-    if (userInfo.friends.filter((user) => user.id === contactId).length > 0) {
-      // false show no friend btn
-      console.log("freind", contactId, userInfo.friends.filter((user) => user.id === contactId))
-      return false;
-    } else if (
-      userInfo.pendingRequest.filter((user) => user.id === contactId).length > 0
+    if (
+      userInfo.friends.includes(contactId) ||
+      userInfo.requestSentTo.includes(contactId) ||
+      userInfo.pendingRequest.includes(contactId)
     ) {
+      // false show no friend request btn
       return false;
     }
     console.log("show frnd btn", contactId, false);
@@ -61,15 +57,16 @@ function ChatListItem(props) {
   };
 
   const frienRequestHandler = (data) => {
-    if (data.requester.id !== userInfo?.id){
-      const {pendingRequest, ...rest} = userInfo
-      const currPendingRequest = [data.requester, ...pendingRequest]
-      const updatedUserInfo = {...rest, pendingRequest: currPendingRequest}
+    if (data.requester.id !== userInfo?.id) {
+      const { pendingRequest, ...rest } = userInfo;
+      const currPendingRequest = [data.requester, ...pendingRequest];
+      const updatedUserInfo = { ...rest, pendingRequest: currPendingRequest };
       dispatch(setUser(updatedUserInfo));
     }
   };
 
-  const handleFriendRequest = async () => {
+  const handleFriendRequest = async (event) => {
+    event.stopPropagation();
     console.log("handleFriendRequest");
     dispatch(sendFriendRequest({ from: userInfo.id, to: data.id }));
   };
