@@ -27,7 +27,7 @@ enum MessageType {
   AUDIO
 }
 
-enum MessageDeliveryStaus {
+enum MessageDeliveryStatus {
   SENT
   SEEN
   READ
@@ -52,7 +52,7 @@ model User {
 }
 
 model Chat {
-  chat_id                String   @id @default(cuid())
+  chat_id                String    @id @default(cuid())
   type                   ChatType  @default(PRIVATE)
   // sender_id    Int
   admin_email            String?   @unique
@@ -65,15 +65,16 @@ model Chat {
 }
 
 model Messages {
-  id            String               @id @default(uuid())
-  sender        User                 @relation("sentMessages", fields: [senderId], references: [id])
+  id            String                @id @default(uuid())
+  sender        User                  @relation("sentMessages", fields: [senderId], references: [id])
   senderId      Int
-  type          MessageType          @default(TEXT)
-  message       String
-  messageStatus MessageDeliveryStaus @default(SENT)
-  sent_at       DateTime             @default(now())
-  chat          Chat?                @relation("lastMessage", fields: [chatId], references: [chat_id])
-  chatId        String               @unique @default("_989_")
+  type          MessageType           @default(TEXT)
+  content       String
+  messageStatus MessageDeliveryStatus @default(SENT)
+  seen_by       Int[]
+  sent_at       DateTime              @default(now())
+  chat          Chat?                 @relation("lastMessage", fields: [chatId], references: [chat_id])
+  chatId        String                @unique @default("_989_")
 }
 
 // Group Participants Table
