@@ -41,32 +41,6 @@ export const getMessages = createAsyncThunk(
   }
 );
 
-const socketEmit = async (params = {}) => {
-  try {
-    console.log("params", params);
-    return await socketClient.emit("send-msg", {
-      to: params.recieverId,
-      from: params.senderId,
-      message: params.newMessage,
-    });
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const socketEmitFriendRequest = async (params = {}) => {
-  try {
-    console.log(params);
-    /**
-     {"senderId": number,"receiverId": number}
-     * 
-     */
-    return await socketClient.emit("friend-request-sent", params);
-  } catch (error) {
-    console.log("Error socketEmitFriendRequest", error);
-  }
-};
-
 export const sendMessage = createAsyncThunk(
   "sendMessage",
   async (postData = {}) => {
@@ -98,11 +72,7 @@ export const sendImageMessage = createAsyncThunk(
           },
         }
       );
-
-      console.log("sendImageMessage: ", data);
-      if (status === 201) {
-        socketEmit({ recieverId, senderId, newMessage: data.message });
-      }
+      
       return data;
     } catch (error) {
       console.log(error);

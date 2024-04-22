@@ -13,7 +13,6 @@ function ChatListItem(props) {
   const {
     data,
     isContactPage,
-    friendRequestBtnRequired = true,
     pendingRequest = false,
     blocked = false,
     bgColor,
@@ -36,15 +35,11 @@ function ChatListItem(props) {
   }, [userInfo]);
 
   const checkIfContactExists = (contactId) => {
-    if (
-      userInfo.friends.includes(contactId) ||
-      userInfo.requestSentTo.includes(contactId) ||
-      userInfo.pendingRequest.includes(contactId)
-    ) {
-      // false show no friend request btn
-      return false;
-    }
-    console.log("show frnd btn", contactId, false);
+    if (userInfo.friends.filter((user) => user.id === contactId).length) return false;
+    if (userInfo.blockedUsers.filter((user) => user.id === contactId).length) return false;
+    if (userInfo.pendingRequest.filter((user) => user.id === contactId).length)  return false;
+    if (userInfo.requestSentTo.includes(contactId))  return false;
+    console.log("checkIfContactExists", contactId, false);
     return true;
   };
 

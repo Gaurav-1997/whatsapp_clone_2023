@@ -26,14 +26,13 @@ function Main() {
     toastStatus,
   } = useSelector((reduxState) => reduxState.userReducer);
 
-  useEffect(() => {
-    console.log("toast called");
+  useEffect(() => {    
     const toastStyle = {
       background: "#181a1b",
-      fontSize: "2rem",
+      fontSize: "14px",
       fontWeight: "normal",
       color: "whitesmoke",
-      marginBottom: "20px",
+      marginBottom: "15px",
     };
 
     if (toastMessage) {

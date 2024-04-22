@@ -4,10 +4,10 @@ import { BsPersonFillCheck, BsPersonX } from "react-icons/bs";
 import ImageMessage from "./ImageMessage";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
-import {addOrRejectUser, setCurrentChatUser} from "@/features/user/userSlice"
+import { addOrRejectUser, setCurrentChatUser } from "@/features/user/userSlice";
 
 function ChatContainer() {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const { userInfo, currentChatUser } = useSelector(
     (state) => state.userReducer
   );
@@ -19,10 +19,30 @@ function ChatContainer() {
   //   chatContainerRef.current.scrollIntoView(false);
   // }, [messages]);
 
-
   const requestHandler = (decision) => {
-    dispatch(setCurrentChatUser({...currentChatUser, pendingRequest: !decision}));
-    dispatch(addOrRejectUser({approverId:userInfo.id, isAccepted:decision, requesterId: currentChatUser.id }))
+    dispatch(
+      setCurrentChatUser({ ...currentChatUser, pendingRequest: !decision })
+    );
+    if (decision) {
+      // request accepted
+      dispatch(
+        addOrRejectUser({
+          approverId: userInfo.id,
+          isAccepted: decision,
+          requesterId: currentChatUser.id,
+        })
+      );
+    } else {
+      // request rejected
+      dispatch(
+        addOrRejectUser({
+          approverId: userInfo.id,
+          isAccepted: decision,
+          requesterId: currentChatUser.id,
+          requestSentTo: userInfo.requestSentTo,
+        })
+      );
+    }
   };
 
   return (
@@ -33,7 +53,7 @@ function ChatContainer() {
             className="flex flex-col justify-end w-full gap-1 overflow-auto mx-10 pb-2"
             ref={chatContainerRef}
           >
-            {currentChatUser.pendingRequest.length>0 ? (
+            {currentChatUser.pendingRequest ? (
               <div className="absolute w-[90%] bottom-2 flex justify-between items-center gap-10 bg-slate-800 rounded-md text-white p-2">
                 <div>This is a friend Request</div>
 
@@ -49,7 +69,7 @@ function ChatContainer() {
                   </button>
                   <button
                     className="bg-gray-800 hover:bg-slate-700 text-white text-sm rounded-full p-2 border-[1px] border-slate-700"
-                    onClick={() => requestHandler(true)}
+                    onClick={() => requestHandler(false)}
                   >
                     <span className="flex gap-1">
                       <BsPersonX fill="red" size={20} />

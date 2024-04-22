@@ -23,7 +23,8 @@ const initialState = {
   toastMessage:'',
   showToastMessage: false,
   showLoadingToast: false,
-  toastStatus:''
+  toastStatus:'',
+  privateChatId:null
 };
 
 export const getAllContacts = createAsyncThunk("getAllContacts", async (id) => {
@@ -73,8 +74,8 @@ export const addOrRejectUser = createAsyncThunk(
   async (params = {}) => {
     try {
       console.log({ ...params });
-      const response = await axios.patch(FRIEND_REQUEST_ROUTE, { ...params });
-      return response;
+      const {data} = await axios.patch(FRIEND_REQUEST_ROUTE, { ...params });
+      return data;
     } catch (error) {
       console.error("Error Friend Request sent", error);
     }
@@ -124,6 +125,9 @@ export const userSlice = createSlice({
     setLoadingContacts: (state, action) => {
       state.loadingContacts = action.payload;
     },
+    setPrivateChatId: (state, action) => {
+      state.privateChatId = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder.addCase(getAllContacts.pending, (state) => {
@@ -151,7 +155,7 @@ export const userSlice = createSlice({
     builder.addCase(sendFriendRequest.fulfilled,(state, action) => {
       console.log("fulfilled")
       state.userLoading = false;      
-      state.userInfo = action.payload.user;
+      state.userInfo.requestSentTo = action.payload.user.requestSentTo;
       state.showToastMessage = !state.showToastMessage;
       state.toastStatus = 'success';
       state.toastMessage = action.payload.message;
@@ -165,10 +169,10 @@ export const userSlice = createSlice({
       console.log("addOrRejectUser", action.payload);
       if (action.payload.isAccepted) {
         const replacePendingRequest = state.userInfo.pendingRequest.filter(
-          (user) => user.id !== action.payload.requesterId
+          (user) => user.id !== action.payload.requesterData.id
         );
         const addInFriends = state.userInfo.pendingRequest.filter(
-          (user) => user.id === action.payload.requesterId
+          (user) => user.id === action.payload.requesterData.id
         );
         const { pendingRequest, friends, ...rest } = state.userInfo;
         const updatedFriends = [addInFriends[0], ...friends];
@@ -177,12 +181,19 @@ export const userSlice = createSlice({
           friends: updatedFriends,
           pendingRequest: replacePendingRequest,
         };
+        state.privateChatId = action.payload.privateChatId;
+        state.showToastMessage = !state.showToastMessage;
+        state.toastStatus = 'success';
+        state.toastMessage = action.payload.message;
       } else if (!action.payload.isAccepted) {
         const replacePendingRequest = state.userInfo.pendingRequest.filter(
-          (user) => user.id !== action.payload.requesterId
+          (user) => user.id !== action.payload.requesterData.id
         );
         const { pendingRequest, ...rest } = state.userInfo;
         state.userInfo = { ...rest, pendingRequest: replacePendingRequest };
+        state.showToastMessage = !state.showToastMessage;
+        state.toastStatus = 'success';
+        state.toastMessage = action.payload.message;
       }
     });
   },
@@ -200,6 +211,7 @@ export const {
   setPendingRequest,
   setUserLoading,
   setLoadingContacts,
+  setPrivateChatId
 } = userSlice.actions;
 
 export default userSlice.reducer;
