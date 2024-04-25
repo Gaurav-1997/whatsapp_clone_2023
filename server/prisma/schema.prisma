@@ -34,21 +34,23 @@ enum MessageDeliveryStatus {
 }
 
 model User {
-  id                  Int        @id
-  email               String     @unique
-  name                String
-  profilePicture      String?    @default("")
-  about               String?    @default("")
-  status              String?    @default("")
-  friends             Int[]
-  blockedUsers        Int[]
-  pendingRequest      Int[]
-  requestSentTo       Int[]
-  messages            Messages[] @relation("sentMessages")
-  chat                Chat[]     @relation("chatUser")
-  last_message_sender Chat?
+  id                     Int        @id
+  email                  String     @unique
+  name                   String
+  profilePicture         String?    @default("")
+  about                  String?    @default("")
+  status                 String?    @default("")
+  blockedUsers           Int[]
+  requestSentTo          Int[]
+  messages               Messages[] @relation("sentMessages")
+  chat                   Chat[]     @relation("chatUser")
+  last_message_sender    Chat?
   // groupParticipant    GroupParticipant @relation(fields: [groupParticipant_id], references: [group_id])
   // groupParticipant_id Int?
+  friends                User[]     @relation("friends")
+  friendsRelation        User[]     @relation("friends")
+  pendingRequest         User[]     @relation("pendingRequest")
+  pendingRequestRelation User[]     @relation("pendingRequest")
 }
 
 model Chat {
@@ -63,6 +65,18 @@ model Chat {
   last_message_sender_id Int?      @unique
   // groupChat           GroupParticipant
 }
+
+// model Friends {
+//   friend_id   Int    @id @default(autoincrement())
+//   contact_of  Int
+//   friend_list User[]
+// }
+
+// model PendingRequest {
+//   pending_id   Int    @id @default(autoincrement())
+//   contact_of   Int
+//   pending_list User[]
+// }
 
 model Messages {
   id            String                @id @default(uuid())

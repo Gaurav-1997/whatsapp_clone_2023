@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { addImageMessage, addMessage, getMessages } from "../controllers/MessageController.js";
 import multer from "multer";
-import path from "path";
 
 const router = Router();
 

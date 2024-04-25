@@ -9,14 +9,27 @@ export const checkUser = async (req, res, next) => {
       return res.json({ message: "Email is required", status: false });
     }
     const prisma = getPrismaInstance();
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        friends: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            about: true,
+            profilePicture: true,
+          },
+        },
+        pendingRequest: {
+          select: { id: true, name: true, email: true, profilePicture: true },
+        },
+      },
+    });
 
     if (!user) {
       return res.json({ message: "User not found", staus: false });
     } else {
-      user.friends = await getContactList(user.friends, next);
-      user.blockedUsers = await getContactList(user.blockedUsers, next);
-      user.pendingRequest = await getContactList(user.pendingRequest, next);
 
       const pusherId = crypto.randomUUID(user.id);
       onlineUsers.set(user.id, pusherId);
@@ -89,13 +102,29 @@ export const getAllUsers = async (req, res, next) => {
   }
 };
 
-export const getOnlineUserStatus = (req, res, next) => {
+export const getOnlineUserStatus = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const {isGetPrivateChatId, senderId, recieverId } = req.body;
     console.log("onlineUsers", onlineUsers);
-    const userStatus = onlineUsers.get(Number(userId)) ? true : false;
-    console.log("getOnlineUserStatus", userId, userStatus);
-    return res.status(200).json({ userStatus });
+    const userStatus = onlineUsers.get(Number(recieverId)) ? true : false;
+    
+    if(isGetPrivateChatId){
+      const prisma = getPrismaInstance();
+      const privateChat = await prisma.chat.findFirst({
+      where: {
+        AND: [
+          { type: "PRIVATE" }, // Assuming private chat
+          { chatUser: { some: { id: senderId } } },
+          { chatUser: { some: { id: recieverId } } }
+        ]
+      },
+      select: {
+        chat_id: true,
+      },
+    });
+    return res.status(200).json({ userStatus, privateChat });
+  }
+    return res.status(200).json({ userStatus, privateChat:null });
   } catch (error) {
     next(error);
   }
@@ -103,7 +132,6 @@ export const getOnlineUserStatus = (req, res, next) => {
 
 export const friendRequestHandler = async (req, res, next) => {
   try {
-    console.log("friendRequestHandler", req.body);
     const prisma = getPrismaInstance();
     const { from, to } = req.body;
 
@@ -113,58 +141,64 @@ export const friendRequestHandler = async (req, res, next) => {
       select: { name: true, friends: true, pendingRequest: true },
     });
 
+    // if (existingFriend.friends.includes(from)) {
+    //   return res
+    //     .status(200)
+    //     .json({ message: "User already in contact.PLease check." });
+    // }
+
     // check if reciever is online
     const chatId = global.onlineUsers.get(to);
-    console.log(chatId, !existingFriend.friends.includes(from));
+
 
     const [requester] = await prisma.$transaction(async (prismaTx) => {
-      if (
-        !existingFriend.friends.includes(from) &&
-        !existingFriend.pendingRequest.includes(from)
-      ) {
-        // add appoverId i.e, to in requestSentTo field
-        const requester = await prismaTx.user.update({
-          where: { id: from },
-          data: {
-            requestSentTo: { push: parseInt(to) },
-          },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            requestSentTo: true,
-            profilePicture: true,
+      // if (
+      //   !existingFriend.friends.includes(from) &&
+      //   !existingFriend.pendingRequest.includes(from)
+      // ) {
+      // add appoverId i.e, to in requestSentTo field
+      const requester = await prismaTx.user.update({
+        where: { id: from },
+        data: {
+          requestSentTo: { push: parseInt(to) },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          requestSentTo: true,
+          profilePicture: true,
+        },
+      });
+
+      // send friend request to reciever if he is online
+      if (chatId) {
+        pusherServer.trigger(`channel-${chatId}`, "incoming-friend-request", {
+          requester: {
+            id: requester.id,
+            name: requester.name,
+            email: requester.email,
+            profilePicture: requester.profilePicture,
           },
         });
-        console.log("request", requester);
-
-        // send friend request to reciever if he is online
-        if (chatId) {
-          pusherServer.trigger(`channel-${chatId}`, "incoming-friend-request", {
-            requester: {
-              id: requester.id,
-              name: requester.name,
-              email: requester.email,
-              profilePicture: requester.profilePicture,
-            },
-          });
-        }
-
-        // store request in db whether user online or offline
-        await prismaTx.user.update({
-          where: { id: parseInt(to) },
-          data: {
-            pendingRequest: {
-              push: parseInt(from),
-            },
-          },
-        });
-        return [requester];
-      } else {
-        return res
-          .status(200)
-          .json({ message: "User already a friend or in pendingRequest" });
       }
+      // store request in db whether user online or offline
+      await prismaTx.user.update({
+        where: { id: parseInt(to) },
+        data: {
+          pendingRequest: {
+            connect: [{ id: parseInt(from) }],
+          },
+        },
+      });
+
+      return [requester];
+      // }
+      // else {
+      //   return res
+      //     .status(200)
+      //     .json({ message: "User already a friend or in pendingRequest" });
+      // }
     });
 
     return res.status(200).json({
@@ -210,13 +244,18 @@ export const addFriend = async (req, res, next) => {
           });
 
           // Update approver data (friends, pendingRequest, chat)
+          // add requesterId as friend and remove from pendingRequest
 
           const approverData = await prismaTx.user.update({
             where: { id: approverId },
             data: {
-              friends: { push: requesterId },
-              pendingRequest: { set: updatedList },
-              chat: { connect: { chat_id: privateChat.chat_id } },
+              friends: {
+                connect: [{ id: requesterId }],
+              },
+              pendingRequest: {
+                disconnect: [{ id: requesterId }],
+              },
+              chat: { connect: [{ chat_id: privateChat.chat_id }] },
             },
             select: {
               id: true,
@@ -224,6 +263,7 @@ export const addFriend = async (req, res, next) => {
               email: true,
               about: true,
               profilePicture: true,
+              friends: true,
             },
           });
 
@@ -233,10 +273,13 @@ export const addFriend = async (req, res, next) => {
             select: { requestSentTo: true },
           });
 
+          // add approverId as friend and remove from requestSentTo
           const requesterData = await prismaTx.user.update({
             where: { id: requesterId },
             data: {
-              friends: { push: approverId },
+              friends: {
+                connect: [{ id: approverId }],
+              },
               requestSentTo: {
                 set: requester.requestSentTo.filter((id) => id !== approverId),
               },
@@ -281,7 +324,6 @@ export const addFriend = async (req, res, next) => {
     } else {
       const [requesterData] = await prisma.$transaction(async (prismaTx) => {
         const { requestSentTo } = req.body;
-        console.log("requestSentTo", requestSentTo);
 
         // Update approver's pending request list (if declining):yes
         await prismaTx.user.update({
@@ -298,7 +340,7 @@ export const addFriend = async (req, res, next) => {
             },
           },
           select: {
-            id:true,
+            id: true,
             requestSentTo: true,
           },
         });
@@ -350,54 +392,3 @@ const getContactList = async (contactIds, next) => {
     next(error);
   }
 };
-
-/*
-export const addFriend = async (req, res, next) => {
-  try {
-    const { approverId, requesterId, isAccepted } = req.body;
-    const prisma = getPrismaInstance();
-
-    // Begin a transaction
-    await prisma.$transaction(async (prisma) => {
-      if (isAccepted) {
-        // Create a private chat
-        const privateChat = await prisma.chat.create({
-          data: { type: ChatType.PRIVATE, sender_id: requesterId },
-        });
-
-        // Update the approver's data
-        await prisma.user.update({
-          where: { id: approverId },
-          data: {
-            friends: { push: requesterId },
-            pendingRequest: { set: { remove: requesterId } },
-            chat: { connect: { chat_id: privateChat.chat_id } },
-          },
-        });
-
-        // Update the requester's data
-        await prisma.user.update({
-          where: { id: requesterId },
-          data: {
-            friends: { push: approverId },
-            chat: { connect: { chat_id: privateChat.chat_id } },
-          },
-        });
-      } else {
-        // Update the approver's data if the request is declined
-        await prisma.user.update({
-          where: { id: parseInt(approverId) },
-          data: {
-            pendingRequest: { set: { remove: requesterId } },
-          },
-        });
-      }
-    });
-
-    return res.status(200).json({ message: 'Friend request processed successfully.' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-*/
