@@ -15,12 +15,9 @@ function ChatHeader() {
   const dispatch = useDispatch();
   // const [userStatus, setUserStatus] = React.useState(false);
 
-  useEffect(() => {
-    dispatch(getUserStatus(currentChatUser?.id));
-    console.log(currentChatUser.id, currentChatUserStatus);
-    // setUserStatus(onlineUsers.includes(currentChatUser?.id));
-    // console.log("onlineUsers", onlineUsers);
-  }, []);
+  // useEffect(() => {
+  //   dispatch(getUserStatus(currentChatUser?.id));
+  // }, []);
 
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center bg-panel-header-background z-10">

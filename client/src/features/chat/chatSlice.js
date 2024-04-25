@@ -45,11 +45,11 @@ export const sendMessage = createAsyncThunk(
   "sendMessage",
   async (postData = {}) => {
     try {
+      console.log("sendMessage",{...postData});
       const { data } = await axios.post(ADD_MESSAGES_ROUTE, {
-        to: postData.recieverId,
-        from: postData.senderId,
-        message: postData.message,
+        ...postData
       });
+      console.log("data", data);
       return data;
     } catch (error) {
       console.log(error);
@@ -120,7 +120,7 @@ const chatSlice = createSlice({
     });
     builder.addCase(sendMessage.pending, (state, action) => {
       state.isSending = true;
-      // console.log("sendMessage.pending", action.payload);
+      console.log("sendMessage.pending", action.payload);
     });
     builder.addCase(sendMessage.fulfilled, (state, action) => {
       // console.log("sendMessage.fulfilled", action.payload)

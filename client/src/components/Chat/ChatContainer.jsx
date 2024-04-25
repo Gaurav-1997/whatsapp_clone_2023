@@ -80,7 +80,7 @@ function ChatContainer() {
               </div>
             ) : (
               <>
-                {/* {messages?.map((message) => (
+                {messages?.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${
@@ -98,10 +98,10 @@ function ChatContainer() {
                       : "bg-outgoing-background"
                   }`}
                       >
-                        <span className="break-all">{message.message}</span>
+                        <span className="break-all">{message.content}</span>
                         <div className="flex flex-row gap-1 items-end relative">
                           <span className="block text-bubble-meta text-[10px] pt-1 min-w-fit">
-                            {calculateTime(message?.createdAt)}
+                            {calculateTime(message?.sent_at)}
                           </span>
                           <span className="block">
                             {message?.senderId === userInfo.id && (
@@ -117,7 +117,7 @@ function ChatContainer() {
                       <ImageMessage message={message} />
                     )}
                   </div>
-                ))} */}
+                ))}
               </>
             )}
           </div>

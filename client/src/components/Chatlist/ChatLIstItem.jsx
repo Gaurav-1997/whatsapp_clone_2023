@@ -5,7 +5,11 @@ import {
   setAllContactsPage,
   setCurrentChatUser,
 } from "@/features/user/userSlice";
-import { sendFriendRequest, setUser } from "@/features/user/userSlice";
+import {
+  sendFriendRequest,
+  setUser,
+  getUserStatus,
+} from "@/features/user/userSlice";
 import { pusherClient } from "@/utils/PusherClient";
 import { BsFillPersonPlusFill } from "react-icons/bs";
 
@@ -35,17 +39,30 @@ function ChatListItem(props) {
   }, [userInfo]);
 
   const checkIfContactExists = (contactId) => {
-    if (userInfo.friends.filter((user) => user.id === contactId).length) return false;
-    if (userInfo.blockedUsers.filter((user) => user.id === contactId).length) return false;
-    if (userInfo.pendingRequest.filter((user) => user.id === contactId).length)  return false;
-    if (userInfo.requestSentTo.includes(contactId))  return false;
+    if (userInfo.friends.filter((user) => user.id === contactId).length)
+      return false;
+    if (userInfo.blockedUsers.filter((user) => user.id === contactId).length)
+      return false;
+    if (userInfo.pendingRequest.filter((user) => user.id === contactId).length)
+      return false;
+    if (userInfo.requestSentTo.includes(contactId)) return false;
     console.log("checkIfContactExists", contactId, false);
     return true;
   };
 
   const handleContactClick = () => {
     // adding pending request to CurrentChatUser to display the accept & reject request
-    console.log("handleContactClick", pendingRequest);
+    const isGetPrivateChatId =
+      userInfo.friends.filter((user) => user.id === data.id).length > 0;
+    console.log("handleContactClick getPrivateChatId");
+    dispatch(
+      getUserStatus({
+        isGetPrivateChatId,
+        senderId: userInfo.id,
+        recieverId: data.id,
+      })
+    );
+
     dispatch(setCurrentChatUser({ ...data, pendingRequest }));
     // close the contactList Page
     // dispatch(setAllContactsPage());

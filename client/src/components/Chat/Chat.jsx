@@ -12,19 +12,18 @@ function Chat() {
 
   React.useEffect(() => {
     pusherClient.subscribe(chatId);
-
-    const doSomething = async (data) => {
-      console.log("pusherClient", data);
-      // alert(data.message);
-      dispatch(addMessage({ newMessage: { ...data.message } }))
-    };
-    pusherClient.bind("message:sent", doSomething);
+    pusherClient.bind("message:sent", handleRecievedMessage);
 
     return () => {
       pusherClient.unsubscribe(chatId);
-      pusherClient.unbind("message:sent", doSomething);
+      pusherClient.unbind("message:sent", handleRecievedMessage);
     };
   }, [chatId]);
+
+  const handleRecievedMessage =()=>{
+    console.log("handleRecievedMessage", data);
+    dispatch(addMessage({ newMessage: { ...data.message } }))
+  }
 
   
 

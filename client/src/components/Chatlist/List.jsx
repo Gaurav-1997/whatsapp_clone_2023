@@ -2,7 +2,11 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { useSelector, useDispatch } from "react-redux";
 import { pusherClient } from "@/utils/PusherClient";
-import { setCurrentChatUser, setPrivateChatId, setUser } from "@/features/user/userSlice";
+import {
+  setCurrentChatUser,
+  setPrivateChatId,
+  setUser,
+} from "@/features/user/userSlice";
 import { toast } from "react-hot-toast";
 
 const ContactListItem = dynamic(() => import("./ChatListItem"));
@@ -39,6 +43,7 @@ function List() {
   }, [userInfo]);
 
   const requestAcceptedHandler = (data) => {
+    console.log("requestAcceptedHandler", data);
     const toastStyle = {
       background: "#181a1b",
       fontSize: "14px",
@@ -47,19 +52,7 @@ function List() {
       marginBottom: "15px",
     };
 
-    if (!data.isAccepted) {
-      // this happens on requester end
-      const { requestSentTo, ...rest } = userInfo;
-      const updatedUserInfo = { ...rest, requestSentTo: data.requestSentTo };
-      dispatch(setUser(updatedUserInfo));
-      dispatch(setCurrentChatUser(userInfo.friends[0]))
-      toast.error(`Friend request rejected by ${data.name}`, {
-        style: toastStyle,
-        position: "bottom-left",
-      });
-    }
-    //add in friends
-    else if (userInfo.id !== data.approverData.id) {
+    if (userInfo.id !== data.approverData.id) {
       const { friends, ...rest } = userInfo;
       const updatedFriends = [data.approverData, ...friends];
       const updatedUserInfo = { ...rest, friends: updatedFriends };
@@ -69,7 +62,18 @@ function List() {
         style: toastStyle,
         position: "bottom-left",
       });
+    } else if (!data?.isAccepted) {
+      // this happens on requester end
+      const { requestSentTo, ...rest } = userInfo;
+      const updatedUserInfo = { ...rest, requestSentTo: data.requestSentTo };
+      dispatch(setUser(updatedUserInfo));
+      dispatch(setCurrentChatUser(userInfo.friends[0]));
+      toast.error(`Friend request rejected by ${data.name}`, {
+        style: toastStyle,
+        position: "bottom-left",
+      });
     }
+    //add in friends
   };
 
   const frienRequestHandler = (data) => {
