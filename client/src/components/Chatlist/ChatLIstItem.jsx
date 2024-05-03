@@ -25,6 +25,7 @@ function ChatListItem(props) {
     (reduxState) => reduxState.userReducer
   );
   const { chatId } = useSelector((reduxState) => reduxState.chatReducer);
+  const { currentChatUser } = useSelector((reduxState) => reduxState.userReducer);
   const dispatch = useDispatch();
 
   React.useEffect(() => {
@@ -78,6 +79,8 @@ function ChatListItem(props) {
   };
 
   const handleFriendRequest = async (event) => {
+    // it was closing the contactsPage on friend requestClick so used event.stopPropagation()
+    // close the contactList Page
     event.stopPropagation();
     console.log("handleFriendRequest");
     dispatch(sendFriendRequest({ from: userInfo.id, to: data.id }));
@@ -94,7 +97,7 @@ function ChatListItem(props) {
       <div className="min-w-full flex flex-col justify-center mt-3 pr-2 ">
         <div className="flex justify-between">
           <div>
-            <span className="text-white text-[1rem]">{data?.name}</span>
+            <span className={`${data?.id===currentChatUser?.id ? 'text-cyan-400 text-[1rem] inner-shadow-blue-500' : 'text-white text-[14px]'} `}>{data?.name}</span>
           </div>
         </div>
         <div className="flex border-b border-conversation-border pb-2 pt-1">

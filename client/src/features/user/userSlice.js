@@ -142,7 +142,7 @@ export const userSlice = createSlice({
     });
     builder.addCase(getUserStatus.fulfilled, (state, action) => {
       state.currentChatUserStatus = action.payload.userStatus
-      state.privateChatId = action.payload.privateChat.chat_id;
+      state.privateChatId = action.payload?.privateChat?.chat_id;
     });
     builder.addCase(getUserStatus.rejected, (state, action) => {
       console.error(action.payload);

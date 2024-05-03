@@ -18,6 +18,7 @@ const initialState = {
   searchMessage: false,
   chatId: null,
   chatUserId: null,
+  lastMessage:null
 };
 
 export const addUser = createAsyncThunk("addUser", async (id) => {
@@ -32,8 +33,10 @@ export const getMessages = createAsyncThunk(
   "getMessages",
   async (params = {}) => {
     try {
-      const getMessagesURL = `${GET_MESSAGES_ROUTE}/${params.senderId}/${params.recieverId}`;
+      console.log("getMessages", params);
+      const getMessagesURL = `${GET_MESSAGES_ROUTE}/${params.privateChatId}/${params.recieverId}/${params.senderId}`;
       const { data } = await axios.get(getMessagesURL);
+      console.log("data", data);
       return data;
     } catch (error) {
       console.log(error);
@@ -45,9 +48,9 @@ export const sendMessage = createAsyncThunk(
   "sendMessage",
   async (postData = {}) => {
     try {
-      console.log("sendMessage",{...postData});
+      console.log("sendMessage", { ...postData });
       const { data } = await axios.post(ADD_MESSAGES_ROUTE, {
-        ...postData
+        ...postData,
       });
       console.log("data", data);
       return data;
@@ -72,7 +75,7 @@ export const sendImageMessage = createAsyncThunk(
           },
         }
       );
-      
+
       return data;
     } catch (error) {
       console.log(error);
@@ -114,6 +117,7 @@ const chatSlice = createSlice({
     });
     builder.addCase(getMessages.fulfilled, (state, action) => {
       state.messages = action.payload.messages;
+      state.lastMessage = action.payload.lastMessage;
     });
     builder.addCase(getMessages.rejected, (state, action) => {
       state.messages = [];
@@ -140,6 +144,7 @@ const chatSlice = createSlice({
   },
 });
 
-export const { addMessage, setSearchMessage, setChatId, setChatUserId } = chatSlice.actions;
+export const { addMessage, setSearchMessage, setChatId, setChatUserId } =
+  chatSlice.actions;
 
 export default chatSlice.reducer;

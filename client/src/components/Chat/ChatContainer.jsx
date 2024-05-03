@@ -5,19 +5,27 @@ import ImageMessage from "./ImageMessage";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
 import { addOrRejectUser, setCurrentChatUser } from "@/features/user/userSlice";
+import { getMessages } from "@/features/chat/chatSlice";
 
 function ChatContainer() {
   const dispatch = useDispatch();
-  const { userInfo, currentChatUser } = useSelector(
+  const { userInfo, currentChatUser, privateChatId } = useSelector(
     (state) => state.userReducer
   );
   const { messages } = useSelector((state) => state.chatReducer);
+  console.log("messages",messages.length);
 
   const chatContainerRef = useRef(null);
 
-  // useEffect(() => {
-  //   chatContainerRef.current.scrollIntoView(false);
-  // }, [messages]);
+  useEffect(() => {
+    chatContainerRef.current.scrollIntoView(false);
+  }, [messages]);
+
+  useEffect(() => {
+    if (privateChatId) {
+      dispatch(getMessages({privateChatId,senderId:userInfo?.id , recieverId: currentChatUser?.id}));
+    }
+  }, [currentChatUser]);
 
   const requestHandler = (decision) => {
     dispatch(
@@ -89,11 +97,11 @@ function ChatContainer() {
                         : "justify-end"
                     } px-1 `}
                   >
-                    {message.type === "text" && (
+                    {message.type === "TEXT" && (
                       <div
                         className={`text-white px-2 py-[5px] text-sm rounded-md flex gap-2 items-end max-w-[70%]
                   ${
-                    message.senderId === currentChatUser.id
+                    message.senderId !== currentChatUser.id
                       ? "bg-incoming-background"
                       : "bg-outgoing-background"
                   }`}

@@ -20,7 +20,7 @@ function Chat() {
     };
   }, [chatId]);
 
-  const handleRecievedMessage =()=>{
+  const handleRecievedMessage =(data)=>{
     console.log("handleRecievedMessage", data);
     dispatch(addMessage({ newMessage: { ...data.message } }))
   }
