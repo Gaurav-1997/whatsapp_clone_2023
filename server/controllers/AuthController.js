@@ -24,13 +24,23 @@ export const checkUser = async (req, res, next) => {
         pendingRequest: {
           select: { id: true, name: true, email: true, profilePicture: true },
         },
+        chat:{
+          select:{
+            chat_id: true,
+            last_message:true,
+            last_message_sender_id:true,
+            unread_message_count:true
+          }
+        }
       },
     });
+    console.log(user)
 
     if (!user) {
       return res.json({ message: "User not found", staus: false });
     } else {
 
+      // this below pusherId will be used for socket-channel connection
       const pusherId = crypto.randomUUID(user.id);
       onlineUsers.set(user.id, pusherId);
 

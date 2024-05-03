@@ -12,7 +12,7 @@ const router = Router();
 const uploadImage = multer({dest: "uploads/images/"})
 
 router.post("/add-messages", addMessage);
-router.get("/get-messages/:from/:to", getMessages);
+router.get("/get-messages/:privateChatId/:recieverId/:senderId", getMessages);
 router.post("/add-image-message",uploadImage.single("image"), addImageMessage);
 
 export default router;

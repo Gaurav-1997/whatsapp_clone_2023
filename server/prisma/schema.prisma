@@ -56,39 +56,27 @@ model User {
 model Chat {
   chat_id                String    @id @default(cuid())
   type                   ChatType  @default(PRIVATE)
-  // sender_id    Int
   admin_email            String?   @unique
   group_chat_name        String?
   chatUser               User[]    @relation("chatUser")
-  last_message           Messages? @relation("lastMessage")
+  last_message           String?
   last_message_sender    User?     @relation(fields: [last_message_sender_id], references: [id])
   last_message_sender_id Int?      @unique
+  unread_message_count   Int?       @default(0)      
   // groupChat           GroupParticipant
 }
 
-// model Friends {
-//   friend_id   Int    @id @default(autoincrement())
-//   contact_of  Int
-//   friend_list User[]
-// }
-
-// model PendingRequest {
-//   pending_id   Int    @id @default(autoincrement())
-//   contact_of   Int
-//   pending_list User[]
-// }
-
 model Messages {
   id            String                @id @default(uuid())
-  sender        User                  @relation("sentMessages", fields: [senderId], references: [id])
+  sender        User                  @relation("sentMessages", fields: [senderId], references: [id],onDelete: Cascade, onUpdate: Cascade)
   senderId      Int
   type          MessageType           @default(TEXT)
   content       String
   messageStatus MessageDeliveryStatus @default(SENT)
   seen_by       Int[]
   sent_at       DateTime              @default(now())
-  chat          Chat?                 @relation("lastMessage", fields: [chatId], references: [chat_id])
-  chatId        String                @unique @default("_989_")
+  // chat          Chat?                 @relation("lastMessage", fields: [chatId], references: [chat_id])
+  chatId        String?                
 }
 
 // Group Participants Table

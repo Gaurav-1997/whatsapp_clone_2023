@@ -32,3 +32,5 @@ const io = new Server(server, {
 });
 
 global.onlineUsers = new Map();
+//currentChatUserId mapped with senderId
+global.currentChatUserIdMap = new Map();
