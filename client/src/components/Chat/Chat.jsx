@@ -5,9 +5,10 @@ import MessageBar from "./MessageBar";
 import { useSelector, useDispatch } from "react-redux";
 import { pusherClient } from "@/utils/PusherClient";
 import { addMessage } from "@/features/chat/chatSlice";
-
+import { setLastMessageInfo } from "@/features/user/userSlice";
 function Chat() {
-  const { chatId } = useSelector(reduxState => reduxState.chatReducer);
+  const { chatId } = useSelector((reduxState) => reduxState.chatReducer);
+  const { userInfo ,currentChatUser } = useSelector((reduxState) => reduxState.userReducer);
   const dispatch = useDispatch();
 
   React.useEffect(() => {
@@ -20,20 +21,28 @@ function Chat() {
     };
   }, [chatId]);
 
-  const handleRecievedMessage =(data)=>{
+  const handleRecievedMessage = (data) => {
     console.log("handleRecievedMessage", data);
-    dispatch(addMessage({ newMessage: { ...data.message } }))
-  }
-
-  
+    const { message, recieverId,senderId, unread_message_count = 0 } = data;
+    console.log(recieverId,"," ,currentChatUser.id, ",",userInfo.id)
+    if(recieverId === userInfo.id){
+      dispatch(
+        addMessage({
+          newMessage: { ...message }
+        })
+      );
+    }
+    else{
+      dispatch(setLastMessageInfo(data));
+    }
+  };
 
   return (
     <div className="border-conversation-border border-l bg-conversation-panel-background flex flex-col h-[100vh] z-10">
       <ChatHeader />
       <div className="h-full flex flex-col justify-between">
-
-      <ChatContainer/>
-      <MessageBar/>
+        <ChatContainer />
+        <MessageBar />
       </div>
     </div>
   );

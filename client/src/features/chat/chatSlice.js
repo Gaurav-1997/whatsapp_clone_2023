@@ -18,7 +18,7 @@ const initialState = {
   searchMessage: false,
   chatId: null,
   chatUserId: null,
-  lastMessage:null
+  lastMessage: null,
 };
 
 export const addUser = createAsyncThunk("addUser", async (id) => {

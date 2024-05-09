@@ -123,11 +123,23 @@ export const userSlice = createSlice({
       state.userLoading = action.payload;
     },
     setLoadingContacts: (state, action) => {
-      state.loadingContacts = action.payload;
+      state.loadingContacts = action.payload; 
     },
     setPrivateChatId: (state, action) => {
       state.privateChatId = action.payload;
     },
+    setLastMessageInfo: (state, action)=>{
+      // iterate to filter recieverid
+      for(let friend of state.userInfo.friends){
+        if(friend.id === action.payload.senderId){
+          console.log("friend",action.payload)
+          friend.chat[0].last_message = action.payload.message.content
+          friend.chat[0].last_message_status = action.payload.message.messageStatus
+          friend.chat[0].last_message_sender_id = action.payload.senderId
+          friend.chat[0].unread_message_count = action.payload.unread_message_count
+        }
+      }
+    }
   },
   extraReducers: (builder) => {
     builder.addCase(getAllContacts.pending, (state) => {
@@ -212,7 +224,7 @@ export const {
   setPendingRequest,
   setUserLoading,
   setLoadingContacts,
-  setPrivateChatId,
+  setPrivateChatId,setLastMessageInfo
 } = userSlice.actions;
 
 export default userSlice.reducer;

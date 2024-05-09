@@ -12,6 +12,8 @@ import {
 } from "@/features/user/userSlice";
 import { pusherClient } from "@/utils/PusherClient";
 import { BsFillPersonPlusFill } from "react-icons/bs";
+import MessageStatus from "../common/MessageStatus";
+import { LastMessageInfo } from "./LastMessageInfo";
 
 function ChatListItem(props) {
   const {
@@ -25,7 +27,9 @@ function ChatListItem(props) {
     (reduxState) => reduxState.userReducer
   );
   const { chatId } = useSelector((reduxState) => reduxState.chatReducer);
-  const { currentChatUser } = useSelector((reduxState) => reduxState.userReducer);
+  const { currentChatUser } = useSelector(
+    (reduxState) => reduxState.userReducer
+  );
   const dispatch = useDispatch();
 
   React.useEffect(() => {
@@ -91,19 +95,31 @@ function ChatListItem(props) {
       className={`flex cursor-pointer items-center bg-${bgColor} hover:bg-background-default-hover rounded-lg relative`}
       onClick={handleContactClick}
     >
-      <div className="min-w-fit px-5 pt-3 pb-1">
+      <div className="min-w-fit px-3 pt-2 pb-1">
         <Avatar type="sm" image={data?.profilePicture} />
       </div>
       <div className="min-w-full flex flex-col justify-center mt-3 pr-2 ">
         <div className="flex justify-between">
           <div>
-            <span className={`${data?.id===currentChatUser?.id ? 'text-cyan-400 text-[1rem] inner-shadow-blue-500' : 'text-white text-[14px]'} `}>{data?.name}</span>
+            <span
+              className={`${
+                data?.id === currentChatUser?.id
+                  ? "text-cyan-400 text-[1rem] inner-shadow-blue-500"
+                  : "text-white text-[14px]"
+              } `}
+            >
+              {data?.name}
+            </span>
           </div>
         </div>
         <div className="flex border-b border-conversation-border pb-2 pt-1">
           <div className="flex justify-between">
             <div className="text-secondary text-sm line-clamp-1 truncate">
-              {data?.about || "\u00A0"}
+              {data?.chat ? (
+                <LastMessageInfo data={data.chat[0]} id={data.id} />
+              ) : (
+                <>{data?.about || "\u00A0"}</>
+              )}
             </div>
 
             {contactsPage && checkIfContactExists(data?.id) && (

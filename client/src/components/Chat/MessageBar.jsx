@@ -9,7 +9,6 @@ import { sendMessage, sendImageMessage } from "@/features/chat/chatSlice";
 import PhotoPicker from "../common/PhotoPicker";
 import CaptureAudio from "../common/CaptureAudio";
 import { MESSAGE_TYPE_IMAGE, MESSAGE_TYPE_TEXT } from "@/utils/Constants";
-import { pusherClient, pusherServerOnClient } from "@/utils/PusherClient";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"));
 

@@ -4,7 +4,11 @@ import { BsPersonFillCheck, BsPersonX } from "react-icons/bs";
 import ImageMessage from "./ImageMessage";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
-import { addOrRejectUser, setCurrentChatUser } from "@/features/user/userSlice";
+import {
+  addOrRejectUser,
+  setCurrentChatUser,
+  setLastMessageInfo,
+} from "@/features/user/userSlice";
 import { getMessages } from "@/features/chat/chatSlice";
 
 function ChatContainer() {
@@ -12,8 +16,8 @@ function ChatContainer() {
   const { userInfo, currentChatUser, privateChatId } = useSelector(
     (state) => state.userReducer
   );
-  const { messages } = useSelector((state) => state.chatReducer);
-  console.log("messages",messages.length);
+  const { messages, lastMessage } = useSelector((state) => state.chatReducer);
+  console.log("messages", messages.length);
 
   const chatContainerRef = useRef(null);
 
@@ -23,7 +27,23 @@ function ChatContainer() {
 
   useEffect(() => {
     if (privateChatId) {
-      dispatch(getMessages({privateChatId,senderId:userInfo?.id , recieverId: currentChatUser?.id}));
+      dispatch(
+        getMessages({
+          privateChatId,
+          senderId: userInfo?.id,
+          recieverId: currentChatUser?.id,
+        })
+      );
+      dispatch(
+        setLastMessageInfo({
+          message: {
+            content: lastMessage?.last_message,
+            messageStatus: lastMessage?.last_message_status,
+          },
+          senderId: lastMessage?.last_message_sender_id,
+          unread_message_count: lastMessage?.unread_message_count,
+        })
+      );
     }
   }, [currentChatUser]);
 
