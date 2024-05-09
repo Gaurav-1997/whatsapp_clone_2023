@@ -9,14 +9,8 @@ export const addMessage = async (req, res, next) => {
     const { senderId, recieverId, message, type, privateChatId } = req.body;
 
     const isReceiverOnline = onlineUsers.get(recieverId);
-    console.log("req.body: ", req.body);
-    const currentChatUser = global.currentChatUserIdMap.get(senderId);
-    console.log(global.currentChatUserIdMap);
-    console.log("currentChatUserId: ", currentChatUser, "==", recieverId);
-    console.log(
-      "currentChatUserId: ",
-      isReceiverOnline && currentChatUser === recieverId
-    );
+    // sender should be currentChatUser for reciever to read the message
+    const currentChatUser = global.currentChatUserIdMap.get(recieverId);
 
     if (message && senderId) {
       const newMessage = await prisma.messages.create({
@@ -41,31 +35,45 @@ export const addMessage = async (req, res, next) => {
         },
       });
 
-      await prisma.chat.update({
+      const latest_chat = await prisma.chat.update({
         where: { chat_id: privateChatId },
         data: {
           last_message: message,
           last_message_sender_id: senderId,
+          last_message_status:
+            isReceiverOnline && currentChatUser === senderId
+              ? MessageDeliveryStatus.READ
+              : MessageDeliveryStatus.SENT,
+          unread_message_count:
+            isReceiverOnline && currentChatUser === senderId
+              ? 0
+              : { increment: 1 },
+        },
+        select: {
+          unread_message_count: true,
         },
       });
 
-      console.log("newMessage", newMessage);
       /* trigger a pusher event for a specific chat for new message*/
-      console.log("global.onlineUsers", global.onlineUsers);
 
       // Check if the receiver is online and reciever is currenthatUser==recieverId then make message read
       // it also acts is pusher-channel
-      if (isReceiverOnline && currentChatUser === recieverId) {
+      console.log(currentChatUser, senderId,currentChatUser === senderId)
+      console.log(global.currentChatUserIdMap)
+      if (isReceiverOnline && currentChatUser === senderId) {
         newMessage.messageStatus = MessageDeliveryStatus.READ;
 
         pusherServer.trigger(isReceiverOnline, "message:sent", {
           message: newMessage,
+          recieverId
         });
       } else if (isReceiverOnline) {
         newMessage.messageStatus = MessageDeliveryStatus.SENT;
 
         pusherServer.trigger(isReceiverOnline, "message:sent", {
           message: newMessage,
+          senderId,
+          unread_message_count: latest_chat.unread_message_count
         });
       }
       return res.status(201).send({ message: newMessage });
@@ -80,14 +88,23 @@ export const getMessages = async (req, res, next) => {
   try {
     // console.log("from getMessages", req.params);
     const prisma = getPrismaInstance();
-    const { privateChatId, senderId, recieverId } = req.params;
+    const { senderId, recieverId } = req.params;
 
-    global.currentChatUserIdMap.set(parseInt(senderId), parseInt(recieverId));
-
-    console.log("privateChatId", privateChatId);
+    const privateChat = await prisma.chat.findFirst({
+      where: {
+        AND: [
+          { type: "PRIVATE" }, // Assuming private chat
+          { chatUser: { some: { id: parseInt(senderId) } } },
+          { chatUser: { some: { id: parseInt(recieverId) } } },
+        ],
+      },
+      select: {
+        chat_id: true,
+      },
+    });
 
     const messages = await prisma.messages.findMany({
-      where: { chatId: privateChatId },
+      where: { chatId: privateChat.chat_id },
       orderBy: { sent_at: "asc" },
     });
 
@@ -108,11 +125,17 @@ export const getMessages = async (req, res, next) => {
       data: { messageStatus: MessageDeliveryStatus.READ },
     });
 
-    const lastMessage = await prisma.chat.findUnique({
-      where: { chat_id: privateChatId },
+    const lastMessage = await prisma.chat.update({
+      where: { chat_id: privateChat.chat_id },
+      data: {        
+        last_message_status: MessageDeliveryStatus.READ,
+        unread_message_count: 0,
+      },
       select: {
         last_message: true,
         last_message_sender_id: true,
+        last_message_status: true,
+        unread_message_count: true,
       },
     });
     res.status(200).json({ messages: messages, lastMessage });

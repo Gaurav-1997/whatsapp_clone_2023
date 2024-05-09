@@ -19,27 +19,54 @@ export const checkUser = async (req, res, next) => {
             email: true,
             about: true,
             profilePicture: true,
+            chat: {
+              where: {
+                AND: [
+                  { type: "PRIVATE" }, // Assuming private chat
+                  { chatUser: { some: { email: email } } },              
+                ],
+              },
+              select: {
+                chat_id: true,
+                last_message: true,
+                last_message_sender_id: true,
+                unread_message_count: true,
+                last_message_status: true,
+                // chatUser: {
+                //   select: {
+                //     id: true,
+                //   },
+                // },
+              },
+            },
           },
         },
         pendingRequest: {
           select: { id: true, name: true, email: true, profilePicture: true },
         },
-        chat:{
-          select:{
-            chat_id: true,
-            last_message:true,
-            last_message_sender_id:true,
-            unread_message_count:true
-          }
-        }
+        // chat: {
+        //   select: {
+        //     chat_id: true,
+        //     last_message: true,
+        //     last_message_sender_id: true,
+        //     unread_message_count: true,
+        //     last_message_status: true,
+        //     chatUser: {
+        //       select: {
+        //         id: true,
+        //       },
+        //     },
+        //   },
+        // },
       },
     });
-    console.log(user)
+
+    // console.log((JSON.stringify(user.friends, null, 3)));
+    // console.log(JSON.stringify(friends))
 
     if (!user) {
       return res.json({ message: "User not found", staus: false });
     } else {
-
       // this below pusherId will be used for socket-channel connection
       const pusherId = crypto.randomUUID(user.id);
       onlineUsers.set(user.id, pusherId);
@@ -114,27 +141,28 @@ export const getAllUsers = async (req, res, next) => {
 
 export const getOnlineUserStatus = async (req, res, next) => {
   try {
-    const {isGetPrivateChatId, senderId, recieverId } = req.body;
-    console.log("onlineUsers", onlineUsers);
+    const { isGetPrivateChatId, senderId, recieverId } = req.body;
+    console.log("onlineUsers", global.onlineUsers);
     const userStatus = onlineUsers.get(Number(recieverId)) ? true : false;
-    
-    if(isGetPrivateChatId){
+    global.currentChatUserIdMap.set(parseInt(senderId), parseInt(recieverId));
+    console.log(global.currentChatUserIdMap)
+    if (isGetPrivateChatId) {
       const prisma = getPrismaInstance();
       const privateChat = await prisma.chat.findFirst({
-      where: {
-        AND: [
-          { type: "PRIVATE" }, // Assuming private chat
-          { chatUser: { some: { id: senderId } } },
-          { chatUser: { some: { id: recieverId } } }
-        ]
-      },
-      select: {
-        chat_id: true,
-      },
-    });
-    return res.status(200).json({ userStatus, privateChat });
-  }
-    return res.status(200).json({ userStatus, privateChat:null });
+        where: {
+          AND: [
+            { type: "PRIVATE" }, // Assuming private chat
+            { chatUser: { some: { id: senderId } } },
+            { chatUser: { some: { id: recieverId } } },
+          ],
+        },
+        select: {
+          chat_id: true,
+        },
+      });
+      return res.status(200).json({ userStatus, privateChat });
+    }
+    return res.status(200).json({ userStatus, privateChat: null });
   } catch (error) {
     next(error);
   }
@@ -159,7 +187,6 @@ export const friendRequestHandler = async (req, res, next) => {
 
     // check if reciever is online
     const chatId = global.onlineUsers.get(to);
-
 
     const [requester] = await prisma.$transaction(async (prismaTx) => {
       // if (
