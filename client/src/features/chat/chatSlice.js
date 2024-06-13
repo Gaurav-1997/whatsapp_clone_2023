@@ -127,7 +127,7 @@ const chatSlice = createSlice({
       console.log("sendMessage.pending", action.payload);
     });
     builder.addCase(sendMessage.fulfilled, (state, action) => {
-      // console.log("sendMessage.fulfilled", action.payload)
+      console.log("sendMessage.fulfilled", action.payload)
       state.isSending = false;
       state.messages.push({ ...action.payload.message, fromSelf: true });
     });

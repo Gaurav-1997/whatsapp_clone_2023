@@ -9,6 +9,7 @@ import { sendMessage, sendImageMessage } from "@/features/chat/chatSlice";
 import PhotoPicker from "../common/PhotoPicker";
 import CaptureAudio from "../common/CaptureAudio";
 import { MESSAGE_TYPE_IMAGE, MESSAGE_TYPE_TEXT } from "@/utils/Constants";
+import { setLastMessageInfo } from "@/features/user/userSlice";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"));
 
@@ -17,7 +18,7 @@ function MessageBar() {
   const emojiPickerRef = useRef(null);
   const [grabPhoto, setGrabPhoto] = useState(false);
   const [showAudioRecorder, setAudioRecorder] = useState(false);
-  const { chatId } = useSelector(reduxState => reduxState.chatReducer);
+  const { messages } = useSelector((reduxState) => reduxState.chatReducer);
 
   useEffect(() => {
     const checkPress = (event) => {
@@ -83,11 +84,26 @@ function MessageBar() {
     (state) => state.userReducer
   );
 
+  useEffect(()=>{
+    if(messages[messages.length-1]?.fromSelf){
+      
+      dispatch(setLastMessageInfo({
+        message:{
+          content:messages[messages.length-1].content,
+          messageStatus:messages[messages.length-1].messageStatus,
+          fromSelf:messages[messages.length-1].fromSelf,
+          senderId:messages[messages.length-1].senderId,
+          recieverId: currentChatUser?.id
+        },
+      }))
+    }
+  },[messages])
+
   const handleSendMessage = () => {
     dispatch(
       sendMessage({
         senderId: userInfo?.id,
-        recieverId: currentChatUser?.id,        
+        recieverId: currentChatUser?.id,
         message,
         type: MESSAGE_TYPE_TEXT,
         privateChatId: privateChatId,

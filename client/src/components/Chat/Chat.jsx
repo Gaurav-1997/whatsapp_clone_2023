@@ -31,6 +31,7 @@ function Chat() {
           newMessage: { ...message }
         })
       );
+      dispatch(setLastMessageInfo(data));
     }
     else{
       dispatch(setLastMessageInfo(data));

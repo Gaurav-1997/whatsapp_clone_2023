@@ -16,15 +16,12 @@ function List() {
 
   const { userInfo } = useSelector((reduxState) => reduxState.userReducer);
   const { chatId } = useSelector((reduxState) => reduxState.chatReducer);
-  // console.log("userPendingRequest", userPendingRequest);
-  console.log("userInfo", userInfo);
 
   React.useEffect(() => {
-    // if(userInfo){
+    
     pusherClient.subscribe(`channel-${chatId}`);
     pusherClient.bind("incoming-friend-request", frienRequestHandler);
-    console.log("listening on", `channel-${chatId}`);
-    // }
+    
     return () => {
       pusherClient.unsubscribe(`channel-${chatId}`);
       pusherClient.unbind("incoming-friend-request", frienRequestHandler);
@@ -34,7 +31,6 @@ function List() {
   React.useEffect(() => {
     pusherClient.subscribe(`channel-${chatId}`);
     pusherClient.bind("friend-request-accepted", requestAcceptedHandler);
-    console.log("listening on", `channel-${chatId}`);
 
     return () => {
       pusherClient.unsubscribe(`channel-${chatId}`);
@@ -87,8 +83,8 @@ function List() {
 
   return (
     <div className="bg-search-input-container-background flex-auto overflow-auto max-h-full custom-scrollbar">
-      {userInfo?.friends?.map((user) => (
-        <ContactListItem data={user} />
+      {userInfo?.friends?.map((user, index) => (
+        <ContactListItem data={user} index={index}/>
       ))}
       {userInfo?.pendingRequest?.map((user) => (
         <ContactListItem data={user} pendingRequest={true} bgColor="black" />

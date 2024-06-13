@@ -17,7 +17,6 @@ function ChatContainer() {
     (state) => state.userReducer
   );
   const { messages, lastMessage } = useSelector((state) => state.chatReducer);
-  console.log("messages", messages.length);
 
   const chatContainerRef = useRef(null);
 

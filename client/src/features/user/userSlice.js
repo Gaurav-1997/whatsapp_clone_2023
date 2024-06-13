@@ -4,7 +4,7 @@ import {
   GET_PRIVATE_CHATID_ROUTE,
   USER_STATUS_ROUTE,
 } from "@/utils/ApiRoutes";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, current } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const initialState = {
@@ -30,11 +30,9 @@ const initialState = {
 
 export const getAllContacts = createAsyncThunk("getAllContacts", async (id) => {
   try {
-    console.log("getAllContacts for id:", id);
     const {
       data: { users },
     } = await axios.get(`${GET_ALL_CONTACTS}/${id}`);
-    console.log("getAllContacts", users);
     return users;
   } catch (error) {
     console.log(error);
@@ -45,7 +43,6 @@ export const getUserStatus = createAsyncThunk(
   "getUserStatus",
   async (params = {}) => {
     try {
-      console.log("getUserStatus", params);
       const { data } = await axios.post(`${USER_STATUS_ROUTE}`, { ...params });
       return data;
     } catch (error) {
@@ -58,9 +55,7 @@ export const sendFriendRequest = createAsyncThunk(
   "sendFriendRequest",
   async (params = {}) => {
     try {
-      console.log({ ...params });
       const { data } = await axios.post(FRIEND_REQUEST_ROUTE, { ...params });
-      console.log("sendFriendRequest response:", data);
       return data;
     } catch (error) {
       console.error("Error Friend Request sent", error);
@@ -71,8 +66,7 @@ export const sendFriendRequest = createAsyncThunk(
 export const addOrRejectUser = createAsyncThunk(
   "addOrRejectUser",
   async (params = {}) => {
-    try {
-      console.log({ ...params });
+    try {      
       const { data } = await axios.patch(FRIEND_REQUEST_ROUTE, { ...params });
       return data;
     } catch (error) {
@@ -99,6 +93,11 @@ export const userSlice = createSlice({
     },
     setCurrentChatUser: (state, action) => {
       state.currentChatUser = action.payload;
+      for(let friend of state.userInfo.friends){
+        if(friend.id === action.payload.id){          
+          friend.chat[0].unread_message_count = 0
+        }
+      }
     },
     setAllUsers: (state, action) => {
       state.allUsers = action.payload;
@@ -110,16 +109,12 @@ export const userSlice = createSlice({
       state.messages.push(action.payload.newMessage);
     },
     setOnlineUsers: (state, action) => {
-      console.log("setOnlineUsers", action.payload);
       state.onlineUsers = action.payload;
     },
     setPendingRequest: (state, action) => {
-      console.log("userPendingRequest", action.payload);
       state.userPendingRequest = [action.payload, ...state.userPendingRequest];
-      console.log("userPendingRequest", state.userPendingRequest);
     },
     setUserLoading: (state, action) => {
-      console.log("setUserLoading", action.payload);
       state.userLoading = action.payload;
     },
     setLoadingContacts: (state, action) => {
@@ -131,14 +126,20 @@ export const userSlice = createSlice({
     setLastMessageInfo: (state, action)=>{
       // iterate to filter recieverid
       for(let friend of state.userInfo.friends){
-        if(friend.id === action.payload.senderId){
-          console.log("friend",action.payload)
+        if(friend.id === action.payload.message.senderId || friend.id === action.payload.message.recieverId){
           friend.chat[0].last_message = action.payload.message.content
           friend.chat[0].last_message_status = action.payload.message.messageStatus
           friend.chat[0].last_message_sender_id = action.payload.senderId
-          friend.chat[0].unread_message_count = action.payload.unread_message_count
+          friend.chat[0].unread_message_count = action.payload?.unread_message_count
+          friend.chat[0].fromSelf = action.payload?.message?.fromSelf | false
         }
       }
+    },
+    setUserOnTop: (state, action)=>{
+      const temp = state.userInfo
+      const userToSet = temp.friends.splice(action.payload.index, 1)[0];
+      temp.friends.unshift(userToSet);
+      console.log(temp);
     }
   },
   extraReducers: (builder) => {
@@ -166,7 +167,6 @@ export const userSlice = createSlice({
       state.toastMessage = "Sending Request";
     });
     builder.addCase(sendFriendRequest.fulfilled, (state, action) => {
-      console.log("fulfilled");
       state.userLoading = false;
       state.userInfo.requestSentTo = action.payload.user.requestSentTo;
       state.showToastMessage = !state.showToastMessage;
@@ -179,7 +179,6 @@ export const userSlice = createSlice({
       state.showToastMessage = action.payload.message;
     });
     builder.addCase(addOrRejectUser.fulfilled, (state, action) => {
-      console.log("addOrRejectUser", action.payload);
       if (action.payload.isAccepted) {
         const replacePendingRequest = state.userInfo.pendingRequest.filter(
           (user) => user.id !== action.payload.requesterData.id
@@ -224,7 +223,9 @@ export const {
   setPendingRequest,
   setUserLoading,
   setLoadingContacts,
-  setPrivateChatId,setLastMessageInfo
+  setPrivateChatId,
+  setLastMessageInfo,
+  setUserOnTop
 } = userSlice.actions;
 
 export default userSlice.reducer;

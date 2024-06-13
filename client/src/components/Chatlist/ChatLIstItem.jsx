@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   setAllContactsPage,
   setCurrentChatUser,
+  setUserOnTop,
 } from "@/features/user/userSlice";
 import {
   sendFriendRequest,
@@ -12,7 +13,6 @@ import {
 } from "@/features/user/userSlice";
 import { pusherClient } from "@/utils/PusherClient";
 import { BsFillPersonPlusFill } from "react-icons/bs";
-import MessageStatus from "../common/MessageStatus";
 import { LastMessageInfo } from "./LastMessageInfo";
 
 function ChatListItem(props) {
@@ -22,11 +22,12 @@ function ChatListItem(props) {
     pendingRequest = false,
     blocked = false,
     bgColor,
+    index=0
   } = props;
   const { userInfo, contactsPage } = useSelector(
     (reduxState) => reduxState.userReducer
   );
-  const { chatId } = useSelector((reduxState) => reduxState.chatReducer);
+  const { chatId, messages } = useSelector((reduxState) => reduxState.chatReducer);
   const { currentChatUser } = useSelector(
     (reduxState) => reduxState.userReducer
   );
@@ -42,6 +43,12 @@ function ChatListItem(props) {
       pusherClient.unbind("incoming-friend-request", frienRequestHandler);
     };
   }, [userInfo]);
+
+  React.useEffect(()=>{
+    console.log("setUserOnTop",index)
+    // if(index !== 0)
+      dispatch(setUserOnTop(index))
+  },[messages])
 
   const checkIfContactExists = (contactId) => {
     if (userInfo.friends.filter((user) => user.id === contactId).length)

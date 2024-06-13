@@ -103,28 +103,6 @@ export const getMessages = async (req, res, next) => {
       },
     });
 
-    const messages = await prisma.messages.findMany({
-      where: { chatId: privateChat.chat_id },
-      orderBy: { sent_at: "asc" },
-    });
-
-    const unreadMessages = [];
-
-    messages.forEach((message, idx) => {
-      if (
-        message.messageStatus !== MessageDeliveryStatus.READ &&
-        message.senderId === parseInt(recieverId)
-      ) {
-        messages[idx].messageStatus = MessageDeliveryStatus.READ;
-        unreadMessages.push(message.id);
-      }
-    });
-
-    await prisma.messages.updateMany({
-      where: { id: { in: unreadMessages } },
-      data: { messageStatus: MessageDeliveryStatus.READ },
-    });
-
     const lastMessage = await prisma.chat.update({
       where: { chat_id: privateChat.chat_id },
       data: {        
@@ -138,6 +116,40 @@ export const getMessages = async (req, res, next) => {
         unread_message_count: true,
       },
     });
+
+    //change unread messageStatus to read
+    await prisma.messages.updateMany({
+      where:{
+        chatId: privateChat.chat_id,
+        messageStatus: MessageDeliveryStatus.SENT
+      },
+      data:{
+        messageStatus: MessageDeliveryStatus.READ
+      }
+    })
+
+    const messages = await prisma.messages.findMany({
+      where: { chatId: privateChat.chat_id },
+      orderBy: { sent_at: "asc" },
+    });
+
+    // const unreadMessages = [];
+
+    // messages.forEach((message, idx) => {
+    //   if (
+    //     message.messageStatus !== MessageDeliveryStatus.READ &&
+    //     message.senderId === parseInt(recieverId)
+    //   ) {
+    //     messages[idx].messageStatus = MessageDeliveryStatus.READ;
+    //     unreadMessages.push(message.id);
+    //   }
+    // });
+
+    // await prisma.messages.updateMany({
+    //   where: { id: { in: unreadMessages } },
+    //   data: { messageStatus: MessageDeliveryStatus.READ },
+    // });
+
     res.status(200).json({ messages: messages, lastMessage });
   } catch (error) {
     next(error);
