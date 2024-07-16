@@ -43,26 +43,9 @@ export const checkUser = async (req, res, next) => {
         },
         pendingRequest: {
           select: { id: true, name: true, email: true, profilePicture: true },
-        },
-        // chat: {
-        //   select: {
-        //     chat_id: true,
-        //     last_message: true,
-        //     last_message_sender_id: true,
-        //     unread_message_count: true,
-        //     last_message_status: true,
-        //     chatUser: {
-        //       select: {
-        //         id: true,
-        //       },
-        //     },
-        //   },
-        // },
+        },        
       },
     });
-
-    // console.log((JSON.stringify(user.friends, null, 3)));
-    // console.log(JSON.stringify(friends))
 
     if (!user) {
       return res.json({ message: "User not found", staus: false });
