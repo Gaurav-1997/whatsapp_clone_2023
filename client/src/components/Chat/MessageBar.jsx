@@ -9,7 +9,7 @@ import { sendMessage, sendImageMessage } from "@/features/chat/chatSlice";
 import PhotoPicker from "../common/PhotoPicker";
 import CaptureAudio from "../common/CaptureAudio";
 import { MESSAGE_TYPE_IMAGE, MESSAGE_TYPE_TEXT } from "@/utils/Constants";
-import { setLastMessageInfo } from "@/features/user/userSlice";
+import { setLastMessageInfo, setUserOnTop } from "@/features/user/userSlice";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"));
 
@@ -99,7 +99,8 @@ function MessageBar() {
     }
   },[messages])
 
-  const handleSendMessage = () => {
+  const handleSendMessage = () => {    
+    dispatch(setUserOnTop({id:currentChatUser?.id}))
     dispatch(
       sendMessage({
         senderId: userInfo?.id,

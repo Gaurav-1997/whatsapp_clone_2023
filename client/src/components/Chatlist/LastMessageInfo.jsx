@@ -3,7 +3,8 @@ import MessageStatus from "../common/MessageStatus";
 import { useSelector } from "react-redux";
 
 export const LastMessageInfo = (props) => {
-  const { userInfo } = useSelector((redux) => redux.userReducer); 
+  const { userInfo } = useSelector((redux) => redux.userReducer);
+
   return (
     <div
       className="w-full flex justify-between items-center text-[12px] gap-1"
@@ -16,8 +17,9 @@ export const LastMessageInfo = (props) => {
         )}
         <span className="text-ellipsis">{props?.data?.last_message}</span>
       </div>
-      {/* unread msg count will show on the user reciever end only */}
+      {/* unread msg count will show on the user:reciever end only */}
       {!props.data?.fromSelf &&
+        props?.data?.last_message_sender_id !== userInfo?.id &&
         props?.data?.unread_message_count > 0 && (
           <div className="bg-[#359e35] px-[8px] py-[2px] rounded-full font-bold text-center inline-block text-[#fff] absolute left-[220px]">
             {props?.data?.unread_message_count}

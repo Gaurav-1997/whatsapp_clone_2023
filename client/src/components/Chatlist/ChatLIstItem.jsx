@@ -22,12 +22,14 @@ function ChatListItem(props) {
     pendingRequest = false,
     blocked = false,
     bgColor,
-    index=0
+    index = 0,
   } = props;
   const { userInfo, contactsPage } = useSelector(
     (reduxState) => reduxState.userReducer
   );
-  const { chatId, messages } = useSelector((reduxState) => reduxState.chatReducer);
+  const { chatId, messages } = useSelector(
+    (reduxState) => reduxState.chatReducer
+  );
   const { currentChatUser } = useSelector(
     (reduxState) => reduxState.userReducer
   );
@@ -44,11 +46,11 @@ function ChatListItem(props) {
     };
   }, [userInfo]);
 
-  React.useEffect(()=>{
-    console.log("setUserOnTop",index)
-    // if(index !== 0)
-      dispatch(setUserOnTop(index))
-  },[messages])
+  // React.useEffect(() => {
+  //   console.log("setUserOnTop", index);
+  //   // if(index !== 0)
+  //   // dispatch(setUserOnTop(index));
+  // }, [messages]);
 
   const checkIfContactExists = (contactId) => {
     if (userInfo.friends.filter((user) => user.id === contactId).length)
@@ -99,7 +101,12 @@ function ChatListItem(props) {
 
   return (
     <div
-      className={`flex cursor-pointer items-center bg-${bgColor} hover:bg-background-default-hover rounded-lg relative`}
+      className={`flex cursor-pointer items-center hover:bg-background-default-hover ${
+        data?.id === currentChatUser?.id
+          ? "text-cyan-400 text-[1rem] bg-background-default-hover m-1"
+          : " text-white text-[14px] m-2"
+      } rounded-lg relative
+      border border-[rgba(9,255,193,0.3)]`}
       onClick={handleContactClick}
     >
       <div className="min-w-fit px-3 pt-2 pb-1">
@@ -108,18 +115,10 @@ function ChatListItem(props) {
       <div className="min-w-full flex flex-col justify-center mt-3 pr-2 ">
         <div className="flex justify-between">
           <div>
-            <span
-              className={`${
-                data?.id === currentChatUser?.id
-                  ? "text-cyan-400 text-[1rem] inner-shadow-blue-500"
-                  : "text-white text-[14px]"
-              } `}
-            >
-              {data?.name}
-            </span>
+            <span>{data?.name}</span>
           </div>
         </div>
-        <div className="flex border-b border-conversation-border pb-2 pt-1">
+        <div className="flex pb-2 pt-1">
           <div className="flex justify-between">
             <div className="text-secondary text-sm line-clamp-1 truncate">
               {data?.chat ? (

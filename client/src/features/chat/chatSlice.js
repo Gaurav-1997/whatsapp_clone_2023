@@ -33,10 +33,10 @@ export const getMessages = createAsyncThunk(
   "getMessages",
   async (params = {}) => {
     try {
-      console.log("getMessages", params);
+      // console.log("getMessages", params);
       const getMessagesURL = `${GET_MESSAGES_ROUTE}/${params.privateChatId}/${params.recieverId}/${params.senderId}`;
       const { data } = await axios.get(getMessagesURL);
-      console.log("data", data);
+      // console.log("data", data);
       return data;
     } catch (error) {
       console.log(error);
@@ -48,11 +48,11 @@ export const sendMessage = createAsyncThunk(
   "sendMessage",
   async (postData = {}) => {
     try {
-      console.log("sendMessage", { ...postData });
+      // console.log("sendMessage", { ...postData });
       const { data } = await axios.post(ADD_MESSAGES_ROUTE, {
         ...postData,
       });
-      console.log("data", data);
+      // console.log("data", data);
       return data;
     } catch (error) {
       console.log(error);
@@ -93,7 +93,7 @@ const chatSlice = createSlice({
     },
     setSearchMessage: (state) => {
       state.searchMessage = !state.searchMessage;
-      console.log(state.searchMessage);
+      // console.log(state.searchMessage);
     },
     setChatId: (state, action) => {
       state.chatId = action.payload;
@@ -124,7 +124,7 @@ const chatSlice = createSlice({
     });
     builder.addCase(sendMessage.pending, (state, action) => {
       state.isSending = true;
-      console.log("sendMessage.pending", action.payload);
+      // console.log("sendMessage.pending", action.payload);
     });
     builder.addCase(sendMessage.fulfilled, (state, action) => {
       console.log("sendMessage.fulfilled", action.payload)
@@ -133,7 +133,7 @@ const chatSlice = createSlice({
     });
     builder.addCase(sendMessage.rejected, (state, action) => {
       if (action?.error?.message === "Rejected") {
-        console.log(action?.payload);
+        // console.log(action?.payload);
         state.isSending = false;
         state.error = action?.payload || "Something went wrong";
       }

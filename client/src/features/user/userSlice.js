@@ -66,7 +66,7 @@ export const sendFriendRequest = createAsyncThunk(
 export const addOrRejectUser = createAsyncThunk(
   "addOrRejectUser",
   async (params = {}) => {
-    try {      
+    try {
       const { data } = await axios.patch(FRIEND_REQUEST_ROUTE, { ...params });
       return data;
     } catch (error) {
@@ -93,9 +93,9 @@ export const userSlice = createSlice({
     },
     setCurrentChatUser: (state, action) => {
       state.currentChatUser = action.payload;
-      for(let friend of state.userInfo.friends){
-        if(friend.id === action.payload.id){          
-          friend.chat[0].unread_message_count = 0
+      for (let friend of state.userInfo.friends) {
+        if (friend.id === action.payload.id) {
+          friend.chat[0].unread_message_count = 0;
         }
       }
     },
@@ -118,29 +118,38 @@ export const userSlice = createSlice({
       state.userLoading = action.payload;
     },
     setLoadingContacts: (state, action) => {
-      state.loadingContacts = action.payload; 
+      state.loadingContacts = action.payload;
     },
     setPrivateChatId: (state, action) => {
       state.privateChatId = action.payload;
     },
-    setLastMessageInfo: (state, action)=>{
+    setLastMessageInfo: (state, action) => {
       // iterate to filter recieverid
-      for(let friend of state.userInfo.friends){
-        if(friend.id === action.payload.message.senderId || friend.id === action.payload.message.recieverId){
-          friend.chat[0].last_message = action.payload.message.content
-          friend.chat[0].last_message_status = action.payload.message.messageStatus
-          friend.chat[0].last_message_sender_id = action.payload.senderId
-          friend.chat[0].unread_message_count = action.payload?.unread_message_count
-          friend.chat[0].fromSelf = action.payload?.message?.fromSelf | false
+      for (let friend of state.userInfo.friends) {
+        if (
+          friend.id === action.payload.message.senderId ||
+          friend.id === action.payload.message.recieverId
+        ) {
+          friend.chat[0].last_message = action.payload.message.content;
+          friend.chat[0].last_message_status =
+            action.payload.message.messageStatus;
+          friend.chat[0].last_message_sender_id = action.payload.senderId;
+          friend.chat[0].unread_message_count =
+            action.payload?.unread_message_count;
+          friend.chat[0].fromSelf = action.payload?.message?.fromSelf | false;
         }
       }
     },
-    setUserOnTop: (state, action)=>{
-      const temp = state.userInfo
-      const userToSet = temp.friends.splice(action.payload.index, 1)[0];
-      temp.friends.unshift(userToSet);
-      console.log(temp);
-    }
+    setUserOnTop: (state, action) => {
+      if (state.userInfo && state.userInfo.friends) {
+        const temp = state.userInfo?.friends.filter(
+          (user) => user?.id !== action.payload?.id
+        );
+        
+        const updatedFriends = [state.currentChatUser, ...temp]
+        state.userInfo.friends = updatedFriends;    
+      }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(getAllContacts.pending, (state) => {
@@ -154,7 +163,7 @@ export const userSlice = createSlice({
       state.isLoading = true;
     });
     builder.addCase(getUserStatus.fulfilled, (state, action) => {
-      state.currentChatUserStatus = action.payload.userStatus
+      state.currentChatUserStatus = action.payload.userStatus;
       state.privateChatId = action.payload?.privateChat?.chat_id;
     });
     builder.addCase(getUserStatus.rejected, (state, action) => {
@@ -225,7 +234,7 @@ export const {
   setLoadingContacts,
   setPrivateChatId,
   setLastMessageInfo,
-  setUserOnTop
+  setUserOnTop,
 } = userSlice.actions;
 
 export default userSlice.reducer;
