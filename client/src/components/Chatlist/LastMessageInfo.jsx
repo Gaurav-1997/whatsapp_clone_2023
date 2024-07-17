@@ -15,7 +15,7 @@ export const LastMessageInfo = (props) => {
         {props.data?.fromSelf && (
           <MessageStatus messageStatus={props?.data?.last_message_status} />
         )}
-        <span className="text-ellipsis">{props?.data?.last_message}</span>
+        <span className="text-ellipsis truncate w-64">{props?.data?.last_message}</span>
       </div>
       {/* unread msg count will show on the user:reciever end only */}
       {!props.data?.fromSelf &&

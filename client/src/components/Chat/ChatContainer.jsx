@@ -1,15 +1,13 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { BsPersonFillCheck, BsPersonX } from "react-icons/bs";
-import ImageMessage from "./ImageMessage";
-import { calculateTime } from "@/utils/CalculateTime";
-import MessageStatus from "@/components/common/MessageStatus";
 import {
   addOrRejectUser,
   setCurrentChatUser,
   setLastMessageInfo,
 } from "@/features/user/userSlice";
 import { getMessages } from "@/features/chat/chatSlice";
+import MessageContainer from "./MessageContainer";
 
 function ChatContainer() {
   const dispatch = useDispatch();
@@ -77,7 +75,7 @@ function ChatContainer() {
       <div className="h-full w-full opacity-1 absolute pt-4">
         <div className="flex w-full overflow-auto">
           <div
-            className="flex flex-col justify-end w-full gap-1 overflow-auto mx-10 pb-2"
+            className="flex flex-col justify-end w-full gap-1 overflow-hidden mx-10 pb-2"
             ref={chatContainerRef}
           >
             {currentChatUser.pendingRequest ? (
@@ -108,42 +106,7 @@ function ChatContainer() {
             ) : (
               <>
                 {messages?.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.senderId === currentChatUser.id
-                        ? "justify-start"
-                        : "justify-end"
-                    } px-1 `}
-                  >
-                    {message.type === "TEXT" && (
-                      <div
-                        className={`text-white px-2 py-[5px] text-sm rounded-md flex gap-2 items-end max-w-[70%]
-                  ${
-                    message.senderId !== currentChatUser.id
-                      ? "bg-incoming-background"
-                      : "bg-outgoing-background"
-                  }`}
-                      >
-                        <span className="break-all">{message.content}</span>
-                        <div className="flex flex-row gap-1 items-end relative">
-                          <span className="block text-bubble-meta text-[10px] pt-1 min-w-fit">
-                            {calculateTime(message?.sent_at)}
-                          </span>
-                          <span className="block">
-                            {message?.senderId === userInfo.id && (
-                              <MessageStatus
-                                messageStatus={message?.messageStatus}
-                              />
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {message?.type === "image" && (
-                      <ImageMessage message={message} />
-                    )}
-                  </div>
+                  <MessageContainer message={message} />
                 ))}
               </>
             )}

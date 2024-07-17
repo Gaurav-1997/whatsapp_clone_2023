@@ -8,7 +8,6 @@ export const socketClient = new SocketClient();
 export default function App({ Component, pageProps }) {
   
   return (
-    // <StateProvider initialState={initialState} reducer={reducer}>
     <Provider store={store}>
       <Head>
         <title>Whatsapp</title>
@@ -16,6 +15,5 @@ export default function App({ Component, pageProps }) {
       </Head>
       <Component {...pageProps} />
     </Provider>
-    // </StateProvider>
   );
 }
