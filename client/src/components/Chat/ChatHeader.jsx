@@ -35,8 +35,8 @@ function ChatHeader() {
           )}
         </div>
       </div>
-      <div className="flex gap-6">
-        <MdCall className="text-panel-header-icon cursor-pointer text-xl" />
+      <div className="flex gap-6 rounded-xl bg-gray-900/50 backdrop-blur-lg p-2 shadow-[inset_12px_12px_12px_rgba(56,6,256,0.1),inset_-10px_-10px_-10px_white]">
+        <MdCall className="text-panel-header-icon cursor-pointer text-xl hover:shadow-inner" />
         <IoVideocam className="text-panel-header-icon cursor-pointer text-xl" />
         <BiSearchAlt2
           className="text-panel-header-icon cursor-pointer text-xl"

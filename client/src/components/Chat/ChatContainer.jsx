@@ -106,7 +106,9 @@ function ChatContainer() {
             ) : (
               <>
                 {messages?.map((message) => (
+                  <div key={message.id}>
                   <MessageContainer message={message} />
+                  </div>
                 ))}
               </>
             )}
