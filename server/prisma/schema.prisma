@@ -33,6 +33,15 @@ enum MessageDeliveryStatus {
   READ
 }
 
+enum ReactionType {
+  LIKE
+  LOVE
+  LAUGH
+  SAD
+  ANGRY
+  WOW
+}
+
 model User {
   id                     Int        @id
   email                  String     @unique
@@ -54,30 +63,42 @@ model User {
 }
 
 model Chat {
-  chat_id                String                @id @default(cuid())
-  type                   ChatType              @default(PRIVATE)
-  admin_email            String?               @unique
+  chat_id                String                 @id @default(cuid())
+  type                   ChatType               @default(PRIVATE)
+  admin_email            String?                @unique
   group_chat_name        String?
-  chatUser               User[]                @relation("chatUser")
+  chatUser               User[]                 @relation("chatUser")
   last_message           String?
   // last_message_sender    User?     @relation("last_message_sender",fields: [last_message_sender_id], references: [id])
   last_message_sender_id Int?
-  unread_message_count   Int?                  @default(0)
+  unread_message_count   Int?                   @default(0)
   last_message_status    MessageDeliveryStatus? @default(SENT)
   // groupChat           GroupParticipant
 }
 
 model Messages {
-  id            String                @id @default(uuid())
-  sender        User                  @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  senderId      Int
-  type          MessageType           @default(TEXT)
-  content       String
-  messageStatus MessageDeliveryStatus @default(SENT)
-  seen_by       Int[]
-  sent_at       DateTime              @default(now())
-  // chat          Chat?                 @relation("lastMessage", fields: [chatId], references: [chat_id])
-  chatId        String?
+  id                String                @id @default(uuid())
+  sender            User                  @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  senderId          Int
+  type              MessageType           @default(TEXT)
+  content           String
+  messageStatus     MessageDeliveryStatus @default(SENT)
+  seen_by           Int[]
+  sent_at           DateTime              @default(now())
+  chatId            String?
+  parentMessageId   String?
+  repliedByUserName String?
+  reactions         MessageReaction[]
+  editedAt          DateTime?            
+}
+
+model MessageReaction {
+  id                String       @id @default(uuid())
+  parentMessage     Messages     @relation(fields: [parentMessageId], references: [id], onDelete: Cascade)
+  parentMessageId   String
+  reactionType      ReactionType
+  reactedByUserName String
+  reactedAt         DateTime     @default(now())
 }
 
 // Group Participants Table
