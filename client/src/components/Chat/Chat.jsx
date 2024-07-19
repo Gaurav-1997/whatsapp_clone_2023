@@ -10,7 +10,7 @@ function Chat() {
   const { chatId } = useSelector((reduxState) => reduxState.chatReducer);
   const { userInfo ,currentChatUser } = useSelector((reduxState) => reduxState.userReducer);
   const dispatch = useDispatch();
-
+  
   React.useEffect(() => {
     pusherClient.subscribe(chatId);
     pusherClient.bind("message:sent", handleRecievedMessage);

@@ -14,6 +14,7 @@ import {
 import { pusherClient } from "@/utils/PusherClient";
 import { BsFillPersonPlusFill } from "react-icons/bs";
 import { LastMessageInfo } from "./LastMessageInfo";
+import { setReplyEnabled } from "@/features/chat/chatSlice";
 
 function ChatListItem(props) {
   const {
@@ -73,10 +74,11 @@ function ChatListItem(props) {
       getUserStatus({
         isGetPrivateChatId,
         senderId: userInfo.id,
-        recieverId: data.id,
+        recieverId: data.id
       })
     );
 
+    dispatch(setReplyEnabled({replyEnabled:false, parentMessage:null, parentMessageId:null, fromSelf:false}))
     dispatch(setCurrentChatUser({ ...data, pendingRequest }));
     // close the contactList Page
     // dispatch(setAllContactsPage());

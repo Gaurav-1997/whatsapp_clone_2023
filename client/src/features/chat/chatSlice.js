@@ -3,8 +3,7 @@ import { socketClient } from "@/pages/_app";
 import {
   GET_MESSAGES_ROUTE,
   ADD_MESSAGES_ROUTE,
-  ADD_IMAGE_MESSAGE_ROUTE,
-  USER_STATUS_ROUTE,
+  ADD_IMAGE_MESSAGE_ROUTE
 } from "@/utils/ApiRoutes";
 import axios from "axios";
 
@@ -19,6 +18,10 @@ const initialState = {
   chatId: null,
   chatUserId: null,
   lastMessage: null,
+  replyEnabled : false,
+  parentMessage: null,
+  parentMessageId: null,
+  fromSelf:true
 };
 
 export const addUser = createAsyncThunk("addUser", async (id) => {
@@ -101,6 +104,15 @@ const chatSlice = createSlice({
     setChatUserId: (state, action) => {
       state.chatUserId = action.payload;
     },
+    setReplyEnabled : (state, action)=> {
+      // state.replyEnabled = action.payload.replyEnabled
+      // state.parentMessage = action.payload.parentMessage
+      // state.parentMessageId = action.payload.parentMessageId
+      return {
+        ...state,
+        ...action.payload
+      }
+    }
   },
   extraReducers: (builder) => {
     builder.addCase(addUser.pending, (state) => {
@@ -144,7 +156,7 @@ const chatSlice = createSlice({
   },
 });
 
-export const { addMessage, setSearchMessage, setChatId, setChatUserId } =
+export const { addMessage, setSearchMessage, setChatId, setChatUserId, setReplyEnabled } =
   chatSlice.actions;
 
 export default chatSlice.reducer;
