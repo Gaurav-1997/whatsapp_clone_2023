@@ -73,23 +73,27 @@ model Chat {
   last_message_sender_id Int?
   unread_message_count   Int?                   @default(0)
   last_message_status    MessageDeliveryStatus? @default(SENT)
+  pinnedMessage          String?
+  pinnedMessageId        String?
   // groupChat           GroupParticipant
+  messagesId             String?
 }
 
 model Messages {
-  id                String                @id @default(uuid())
-  sender            User                  @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  senderId          Int
-  type              MessageType           @default(TEXT)
-  content           String
-  messageStatus     MessageDeliveryStatus @default(SENT)
-  seen_by           Int[]
-  sent_at           DateTime              @default(now())
-  chatId            String?
-  parentMessageId   String?
-  repliedByUserName String?
-  reactions         MessageReaction[]
-  editedAt          DateTime?            
+  id                   String                @id @default(uuid())
+  sender               User                  @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  senderId             Int
+  type                 MessageType           @default(TEXT)
+  content              String
+  messageStatus        MessageDeliveryStatus @default(SENT)
+  seen_by              Int[]
+  sent_at              DateTime              @default(now())
+  chatId               String?
+  parentMessageId      String?
+  parentMessageContent String?
+  repliedByUserId    String?
+  reactions            MessageReaction[]
+  editedAt             DateTime?
 }
 
 model MessageReaction {

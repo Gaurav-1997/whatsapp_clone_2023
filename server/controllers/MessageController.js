@@ -6,7 +6,16 @@ import { MessageDeliveryStatus, MessageType } from "@prisma/client";
 export const addMessage = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
-    const { senderId, recieverId, message, type, privateChatId } = req.body;
+    const {
+      senderId,
+      recieverId,
+      message,
+      type,
+      privateChatId,
+      parentMessageId = "",
+      parentMessage = "",
+      repliedBy = "",
+    } = req.body;
 
     const isReceiverOnline = onlineUsers.get(recieverId);
     // sender should be currentChatUser for reciever to read the message
@@ -23,6 +32,9 @@ export const addMessage = async (req, res, next) => {
               ? MessageDeliveryStatus.READ
               : MessageDeliveryStatus.SENT,
           chatId: privateChatId,
+          parentMessageId : parentMessageId || null,
+          parentMessageContent: parentMessage || null,
+          repliedByUserId : repliedBy.toString() || null
         },
         select: {
           id: true,
@@ -32,6 +44,9 @@ export const addMessage = async (req, res, next) => {
           messageStatus: true,
           chatId: true,
           sent_at: true,
+          parentMessageId: true,
+          parentMessageContent: true,
+          repliedByUserId: true
         },
       });
 
@@ -58,25 +73,39 @@ export const addMessage = async (req, res, next) => {
 
       // Check if the receiver is online and reciever is currenthatUser==recieverId then make message read
       // it also acts is pusher-channel
-      console.log(currentChatUser, senderId,currentChatUser === senderId)
-      console.log(global.currentChatUserIdMap)
+      console.log(currentChatUser, senderId, currentChatUser === senderId);
+      console.log(global.currentChatUserIdMap);
+
+      
+      /*
+      if no parentMessageContent then remove 
+      {parentMessageId, parentMessageContent, repliedBy} from newMessage
+      */
+     
+     let _newMessage = newMessage;
+     if(!newMessage.parentMessageId && !newMessage.parentMessageContent){
+       const {parentMessageId, parentMessageContent, repliedByUserId, ...rest} = newMessage;
+       _newMessage = rest;
+      }
+      console.log("_newMessage",_newMessage)
+
       if (isReceiverOnline && currentChatUser === senderId) {
-        newMessage.messageStatus = MessageDeliveryStatus.READ;
+        _newMessage.messageStatus = MessageDeliveryStatus.READ;
 
         pusherServer.trigger(isReceiverOnline, "message:sent", {
-          message: newMessage,
-          recieverId
+          message: _newMessage,
+          recieverId,
         });
       } else if (isReceiverOnline) {
-        newMessage.messageStatus = MessageDeliveryStatus.SENT;
+        _newMessage.messageStatus = MessageDeliveryStatus.SENT;
 
         pusherServer.trigger(isReceiverOnline, "message:sent", {
-          message: newMessage,
+          message: _newMessage,
           senderId,
-          unread_message_count: latest_chat.unread_message_count
+          unread_message_count: latest_chat.unread_message_count,
         });
       }
-      return res.status(201).send({ message: newMessage });
+      return res.status(201).send({ message: _newMessage });
     }
     return res.status(400).json({ message: "SenderId is required." });
   } catch (error) {
@@ -105,7 +134,7 @@ export const getMessages = async (req, res, next) => {
 
     const lastMessage = await prisma.chat.update({
       where: { chat_id: privateChat.chat_id },
-      data: {        
+      data: {
         last_message_status: MessageDeliveryStatus.READ,
         unread_message_count: 0,
       },
@@ -119,14 +148,14 @@ export const getMessages = async (req, res, next) => {
 
     //change unread messageStatus to read
     await prisma.messages.updateMany({
-      where:{
+      where: {
         chatId: privateChat.chat_id,
-        messageStatus: MessageDeliveryStatus.SENT
+        messageStatus: MessageDeliveryStatus.SENT,
       },
-      data:{
-        messageStatus: MessageDeliveryStatus.READ
-      }
-    })
+      data: {
+        messageStatus: MessageDeliveryStatus.READ,
+      },
+    });
 
     const messages = await prisma.messages.findMany({
       where: { chatId: privateChat.chat_id },
