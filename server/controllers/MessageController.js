@@ -1,7 +1,7 @@
 import getPrismaInstance from "../utils/PrismaClient.js";
 import { renameSync } from "fs";
 import { pusherServer } from "../utils/PusherServer.js";
-import { MessageDeliveryStatus, MessageType } from "@prisma/client";
+import { MessageDeliveryStatus, MessageType, ReactionType } from "@prisma/client";
 
 export const addMessage = async (req, res, next) => {
   try {
@@ -46,7 +46,8 @@ export const addMessage = async (req, res, next) => {
           sent_at: true,
           parentMessageId: true,
           parentMessageContent: true,
-          repliedByUserId: true
+          repliedByUserId: true,
+          reactions:true
         },
       });
 
@@ -69,10 +70,11 @@ export const addMessage = async (req, res, next) => {
         },
       });
 
-      /* trigger a pusher event for a specific chat for new message*/
-
-      // Check if the receiver is online and reciever is currenthatUser==recieverId then make message read
-      // it also acts is pusher-channel
+      /* trigger a pusher event for a specific chat for new message
+      
+      #Check if the receiver is online and reciever is currenthatUser==recieverId then make message read
+      #it also acts is pusher-channel
+      */
       console.log(currentChatUser, senderId, currentChatUser === senderId);
       console.log(global.currentChatUserIdMap);
 
@@ -87,7 +89,6 @@ export const addMessage = async (req, res, next) => {
        const {parentMessageId, parentMessageContent, repliedByUserId, ...rest} = newMessage;
        _newMessage = rest;
       }
-      console.log("_newMessage",_newMessage)
 
       if (isReceiverOnline && currentChatUser === senderId) {
         _newMessage.messageStatus = MessageDeliveryStatus.READ;
@@ -160,24 +161,10 @@ export const getMessages = async (req, res, next) => {
     const messages = await prisma.messages.findMany({
       where: { chatId: privateChat.chat_id },
       orderBy: { sent_at: "asc" },
+      include:{
+        reactions: true
+      }
     });
-
-    // const unreadMessages = [];
-
-    // messages.forEach((message, idx) => {
-    //   if (
-    //     message.messageStatus !== MessageDeliveryStatus.READ &&
-    //     message.senderId === parseInt(recieverId)
-    //   ) {
-    //     messages[idx].messageStatus = MessageDeliveryStatus.READ;
-    //     unreadMessages.push(message.id);
-    //   }
-    // });
-
-    // await prisma.messages.updateMany({
-    //   where: { id: { in: unreadMessages } },
-    //   data: { messageStatus: MessageDeliveryStatus.READ },
-    // });
 
     res.status(200).json({ messages: messages, lastMessage });
   } catch (error) {
@@ -221,3 +208,28 @@ export const addImageMessage = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateReaction = async(req, res, next)=>{
+  const {reactionType, parentMessageId, reactedByUserName, recieverId} = req.body;
+  console.log("reactionData", {reactionType, parentMessageId, reactedByUserName})
+  try {
+    const prismaInstance = getPrismaInstance();
+    const reationData = await prismaInstance.messageReaction.create({
+      data:{
+        parentMessage: {connect:{ id: parentMessageId}},
+        reactionType: ReactionType[reactionType],
+        reactedByUserName: reactedByUserName
+      }
+    })
+  /* if opposite user is online then send realtime reaction update*/  
+  const isRecieverOnline = onlineUsers.get(recieverId);
+  /* if opposite user is online but not currentChatUser send realtime reaction update*/  
+  const currentChatUser = global.currentChatUserIdMap.get(recieverId);
+
+    console.log("messageWithReaction", reationData);
+    return res.status(201).send(reationData);
+  } catch (error) {
+    next(error)
+  }
+
+}
