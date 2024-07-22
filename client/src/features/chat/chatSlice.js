@@ -3,7 +3,8 @@ import { socketClient } from "@/pages/_app";
 import {
   GET_MESSAGES_ROUTE,
   ADD_MESSAGES_ROUTE,
-  ADD_IMAGE_MESSAGE_ROUTE
+  ADD_IMAGE_MESSAGE_ROUTE,
+  REACTION_MESSAGES_ROUTE,
 } from "@/utils/ApiRoutes";
 import axios from "axios";
 
@@ -18,10 +19,10 @@ const initialState = {
   chatId: null,
   chatUserId: null,
   lastMessage: null,
-  replyEnabled : false,
+  replyEnabled: false,
   parentMessage: null,
   parentMessageId: null,
-  fromSelf:true
+  fromSelf: true,
 };
 
 export const addUser = createAsyncThunk("addUser", async (id) => {
@@ -86,6 +87,17 @@ export const sendImageMessage = createAsyncThunk(
   }
 );
 
+export const updateEmojiReaction = createAsyncThunk(
+  "updateEmojiReaction",
+  async (reactionData = {}) => {
+    try {
+      const { data } = await axios.post(REACTION_MESSAGES_ROUTE, {...reactionData});
+      console.log("updateEmojiReaction", data);
+      return data
+    } catch (error) {}
+  }
+);
+
 const chatSlice = createSlice({
   name: "chat",
   initialState,
@@ -104,15 +116,15 @@ const chatSlice = createSlice({
     setChatUserId: (state, action) => {
       state.chatUserId = action.payload;
     },
-    setReplyEnabled : (state, action)=> {
+    setReplyEnabled: (state, action) => {
       // state.replyEnabled = action.payload.replyEnabled
       // state.parentMessage = action.payload.parentMessage
       // state.parentMessageId = action.payload.parentMessageId
       return {
         ...state,
-        ...action.payload
-      }
-    }
+        ...action.payload,
+      };
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(addUser.pending, (state) => {
@@ -139,7 +151,7 @@ const chatSlice = createSlice({
       // console.log("sendMessage.pending", action.payload);
     });
     builder.addCase(sendMessage.fulfilled, (state, action) => {
-      console.log("sendMessage.fulfilled", action.payload)
+      console.log("sendMessage.fulfilled", action.payload);
       state.isSending = false;
       state.messages.push({ ...action.payload.message, fromSelf: true });
     });
@@ -153,10 +165,29 @@ const chatSlice = createSlice({
     builder.addCase(sendImageMessage.fulfilled, (state, action) => {
       state.messages.push({ ...action.payload.message, fromSelf: true });
     });
+    builder.addCase(updateEmojiReaction.pending, (state, action) =>{
+      console.log("updateEmojiReaction.pending", action.payload);
+    })
+    builder.addCase(updateEmojiReaction.fulfilled, (state, action) =>{
+      const index = state.messages.findIndex(message=> message.id === action.payload.parentMessageId)
+      let _messages = state.messages[index];
+      _messages.reactions = [..._messages.reactions ,action.payload];
+      state.messages[index] = _messages;
+      
+      console.log("updateEmojiReaction.fulfilled", JSON.parse(JSON.stringify(state.messages[index]?.reactions)));
+    })
+    builder.addCase(updateEmojiReaction.rejected, (state, action) =>{
+      console.log("updateEmojiReaction.rejected", action.payload);
+    })
   },
 });
 
-export const { addMessage, setSearchMessage, setChatId, setChatUserId, setReplyEnabled } =
-  chatSlice.actions;
+export const {
+  addMessage,
+  setSearchMessage,
+  setChatId,
+  setChatUserId,
+  setReplyEnabled,
+} = chatSlice.actions;
 
 export default chatSlice.reducer;

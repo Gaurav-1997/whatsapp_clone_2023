@@ -7,7 +7,7 @@ import { firebaseAuth } from "@/utils/FirebaseConfig";
 import { useDispatch, useSelector } from "react-redux";
 import { CHECK_USER_ROUTE } from "@/utils/ApiRoutes";
 import { setUser, setUserLoading } from "@/features/user/userSlice";
-import { getMessages, setChatId } from "@/features/chat/chatSlice";
+import { setChatId } from "@/features/chat/chatSlice";
 import { Toaster, toast } from "react-hot-toast";
 
 const ChatList = dynamic(() => import("./Chatlist/ChatList"));
@@ -62,19 +62,11 @@ function Main() {
   const [redirectLogin, setRedirectLogin] = useState(false);
 
   const { searchMessage } = useSelector((reduxState) => reduxState.chatReducer);
-  // preLoadIt()
 
   useEffect(() => {
     if (redirectLogin) router.push("/login");
   }, [redirectLogin]);
 
-  // useEffect(() => {
-  //   if (currentChatUser) {
-  //     dispatch(
-  //       getMessages({ senderId: userInfo?.id, recieverId: currentChatUser?.id })
-  //     );
-  //   }
-  // }, [currentChatUser]);
 
   // it is like useEffect. it will run when the page refreshes
   onAuthStateChanged(firebaseAuth, async (currentUser) => {

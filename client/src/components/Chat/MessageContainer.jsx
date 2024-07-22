@@ -12,10 +12,14 @@ import {
   reactionEmojis,
 } from "@/utils/handler";
 import EditMessage from "../common/EditMessage";
-import { setReplyEnabled } from "@/features/chat/chatSlice";
+import {
+  setReplyEnabled,
+  updateEmojiReaction,
+} from "@/features/chat/chatSlice";
+import MessageReplyBox from "./MessageRelpyBox";
+import ReactionEmojiPill from "../common/ReactionEmojiPill";
 
-const MessageContainer = (props) => {
-  const { message } = props;
+const MessageContainer = ({ message }) => {
   const { userInfo, currentChatUser } = useSelector(
     (state) => state.userReducer
   );
@@ -25,10 +29,6 @@ const MessageContainer = (props) => {
   const [editModalIsOpen, setEditModalIsOpen] = React.useState(false);
   const [isReactionEmojisVisible, setIsReactionEmojisVisible] =
     React.useState(false);
-
-  if (message?.parentMessageContent && message?.parentMessageId) {
-    console.log(message);
-  }
 
   const handleMenuAction = (action) => {
     if (action.toLowerCase() === "reply") {
@@ -43,6 +43,18 @@ const MessageContainer = (props) => {
     }
   };
 
+  const handleReactionEmoji = (emojiType) => {
+    setIsReactionEmojisVisible(false);
+    dispatch(
+      updateEmojiReaction({
+        reactionType: emojiType,
+        parentMessageId: message?.id,
+        reactedByUserName: userInfo?.name,
+        recieverId: currentChatUser?.id
+      })
+    );
+  };
+
   return (
     <div
       id={message?.id}
@@ -50,17 +62,19 @@ const MessageContainer = (props) => {
         message.senderId === currentChatUser.id
           ? "justify-start"
           : "justify-end"
-      } px-1 `}
+      } px-1`}
     >
       {message.type === "TEXT" && (
         <>
           <div
-            className={`group relative flex flex-col text-white px-2 py-1 text-sm rounded-md gap-1 items-end max-w-[70%]
+            className={`message-container group relative flex flex-col text-white px-2 py-1 text-sm rounded-md gap-1 items-end max-w-[70%]
   ${
     message.senderId !== currentChatUser.id
       ? "bg-incoming-background"
       : "bg-outgoing-background"
-  }`}
+  }
+  ${message?.reactions?.length > 0 ? "mb-1" : ""}
+  `}
           >
             {!(message.senderId === currentChatUser.id) ? (
               <Menu>
@@ -118,23 +132,7 @@ const MessageContainer = (props) => {
               </Menu>
             )}
             {message?.parentMessageContent && message?.parentMessageId && (
-              <a
-                className="flex text-white bg-slate-900 w-full rounded-md z-1 border-l-4 border-[#1cc9a9]"
-                href={`#${message?.parentMessageId}`}
-                target="_self"
-              >
-                {/* <div className="w-1 bg-stone-100 z-0"></div> */}
-                <div className="flex flex-col m-1">
-                  <span className="text-[#1cc9a9] font-semibold">
-                    {Number(message?.repliedByUserId) === userInfo?.id
-                      ? "You"
-                      : currentChatUser?.name}
-                  </span>
-                  <span className="text-[#ffffff]">
-                    {message?.parentMessageContent}
-                  </span>
-                </div>
-              </a>
+              <MessageReplyBox message={message} />
             )}
             <div className="break-all text-left w-full mr-1">
               {message.content}
@@ -165,7 +163,7 @@ const MessageContainer = (props) => {
                 className={`emojis absolute flex rounded-xl p-1 ${
                   message.senderId === currentChatUser.id
                     ? "-right-48 bg-green-950/50 -top-14"
-                   : "-left-40 bg-gray-950/50 -top-14"
+                    : "-left-40 bg-gray-950/50 -top-14"
                 } border border-white/5  backdrop-blur-lg
                 transition-all duration-300 ease-out`}
               >
@@ -173,12 +171,16 @@ const MessageContainer = (props) => {
                   <button
                     key={type}
                     className="hover:bg-gray-600 rounded-full p-1 transition-colors duration-200"
-                    onClick={() => setIsReactionEmojisVisible(false)}
+                    onClick={() => handleReactionEmoji(type)}
                   >
                     <span className="text-2xl">{emoji}</span>
                   </button>
                 ))}
               </div>
+            )}
+
+            {message?.reactions?.length > 0 && (
+              <ReactionEmojiPill reactions={message?.reactions} />
             )}
           </div>
         </>

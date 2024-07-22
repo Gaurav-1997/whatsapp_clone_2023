@@ -44,7 +44,7 @@ function ChatListHeader() {
           />
         </div>
       ) : (
-        <div className="flex gap-7 rounded-xl bg-gray-900/50 backdrop-blur-lg p-2 shadow-[inset_12px_12px_12px_rgba(56,6,256,0.1),inset_-10px_-10px_-10px_white]">
+        <div className="flex gap-7 rounded-xl bg-gray-900/50 hover:border-t-2 border-gray-100/10 backdrop-blur-lg p-2 shadow-[inset_12px_12px_12px_rgba(56,6,256,0.1),inset_-10px_-10px_-10px_white]">
           <BsFillChatLeftTextFill
             className="text-panel-header-icon hover:text-[#83ffd4] transition-colors duration-300 delay-50 ease-in-out cursor-pointer text-xl"
             title="New Chat"

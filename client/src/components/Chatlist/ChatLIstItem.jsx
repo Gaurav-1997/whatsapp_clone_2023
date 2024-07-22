@@ -47,12 +47,6 @@ function ChatListItem(props) {
     };
   }, [userInfo]);
 
-  // React.useEffect(() => {
-  //   console.log("setUserOnTop", index);
-  //   // if(index !== 0)
-  //   // dispatch(setUserOnTop(index));
-  // }, [messages]);
-
   const checkIfContactExists = (contactId) => {
     if (userInfo.friends.filter((user) => user.id === contactId).length)
       return false;
@@ -67,19 +61,23 @@ function ChatListItem(props) {
 
   const handleContactClick = () => {
     // adding pending request to CurrentChatUser to display the accept & reject request
-    const isGetPrivateChatId =
-      userInfo.friends.filter((user) => user.id === data.id).length > 0;
-    console.log("handleContactClick getPrivateChatId");
-    dispatch(
-      getUserStatus({
-        isGetPrivateChatId,
-        senderId: userInfo.id,
-        recieverId: data.id
-      })
-    );
 
-    dispatch(setReplyEnabled({replyEnabled:false, parentMessage:null, parentMessageId:null, fromSelf:false}))
-    dispatch(setCurrentChatUser({ ...data, pendingRequest }));
+    /*  prevent from calling Api for CurrentChatUser if same contact clicked multiple times */
+    if(data?.id !== currentChatUser?.id){
+      const isGetPrivateChatId =
+        userInfo.friends.filter((user) => user.id === data.id).length > 0;
+      console.log("handleContactClick getPrivateChatId");
+      dispatch(
+        getUserStatus({
+          isGetPrivateChatId,
+          senderId: userInfo.id,
+          recieverId: data.id
+        })
+      );
+  
+      dispatch(setReplyEnabled({replyEnabled:false, parentMessage:null, parentMessageId:null, fromSelf:false}))
+      dispatch(setCurrentChatUser({ ...data, pendingRequest }));
+    }
     // close the contactList Page
     // dispatch(setAllContactsPage());
   };

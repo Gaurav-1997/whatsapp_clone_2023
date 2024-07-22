@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import Avatar from "../common/Avatar";
 import { MdCall } from "react-icons/md";
 import { IoVideocam } from "react-icons/io5";
@@ -6,18 +6,12 @@ import { BiSearchAlt2 } from "react-icons/bi";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { useDispatch, useSelector } from "react-redux";
 import { setSearchMessage } from "@/features/chat/chatSlice";
-import { getUserStatus } from "@/features/user/userSlice";
 
 function ChatHeader() {
   const { currentChatUser, currentChatUserStatus } = useSelector(
     (state) => state.userReducer
   );
   const dispatch = useDispatch();
-  // const [userStatus, setUserStatus] = React.useState(false);
-
-  // useEffect(() => {
-  //   dispatch(getUserStatus(currentChatUser?.id));
-  // }, []);
 
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center bg-panel-header-background z-10">
@@ -35,7 +29,7 @@ function ChatHeader() {
           )}
         </div>
       </div>
-      <div className="flex gap-6 rounded-xl bg-gray-900/50 backdrop-blur-lg p-2 shadow-[inset_12px_12px_12px_rgba(56,6,256,0.1),inset_-10px_-10px_-10px_white]">
+      <div className="flex gap-6 rounded-xl bg-gray-900/50 hover: border-t-2 border-gray-200/10 backdrop-blur-lg p-2 shadow-[inset_12px_12px_12px_rgba(56,6,256,0.1),inset_-10px_-10px_-10px_white]">
         <MdCall className="text-panel-header-icon cursor-pointer text-xl hover:text-[#83ffd4] transition-colors duration-300 delay-50 ease-in-out" />
         <IoVideocam className="text-panel-header-icon cursor-pointer text-xl hover:text-[#83ffd4] transition-colors duration-300 delay-50 ease-in-out" />
         <BiSearchAlt2

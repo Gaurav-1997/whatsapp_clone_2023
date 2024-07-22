@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-// import ChatListHeader from "./ChatListHeader";
 import SearchBar from "./SearchBar";
 import List from "./List";
 import { useSelector } from "react-redux";
-import ContactsList from "./ContactsList";
+// import ContactsList from "./ContactsList";
 import dynamic from "next/dynamic";
 
 const ChatListHeader = dynamic(()=>import('./ChatListHeader'))
+const ContactsList = dynamic(()=>import('./ContactsList'))
 
 function ChatList() {
   const {contactsPage} = useSelector((state) => state.userReducer);
@@ -20,7 +20,7 @@ function ChatList() {
     }
   }, [contactsPage]);
   return (
-    <div className="bg-panel-header-background flex flex-col max-h-screen z-20">
+    <div className="bg-panel-header-background flex flex-col max-h-screen z-20" draggable>
       {pageType === "default"  && (
         <>
           <ChatListHeader />

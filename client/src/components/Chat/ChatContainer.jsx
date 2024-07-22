@@ -75,7 +75,7 @@ function ChatContainer() {
       <div className="h-full w-full opacity-1 absolute pt-4">
         <div className="flex w-full overflow-auto">
           <div
-            className="flex flex-col justify-end w-full gap-1 overflow-hidden mx-10 pb-2"
+            className="flex flex-col justify-end w-full gap-2 overflow-hidden mx-10 pb-2"
             ref={chatContainerRef}
           >
             {currentChatUser.pendingRequest ? (

@@ -14,5 +14,6 @@ export const FRIEND_REQUEST_ROUTE = `${AUTH_ROUTE}/friend-request`;
 
 export const ADD_MESSAGES_ROUTE = `${MESSAGES_ROUTE}/add-messages`;
 export const GET_MESSAGES_ROUTE = `${MESSAGES_ROUTE}/get-messages`;
+export const REACTION_MESSAGES_ROUTE = `${MESSAGES_ROUTE}/reaction-message`;
 export const ADD_IMAGE_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-image-message`;
 export const USER_DECISION_REQUEST_ROUTE = `${AUTH_ROUTE}/user-decision-request`;
