@@ -1,7 +1,11 @@
 import getPrismaInstance from "../utils/PrismaClient.js";
 import { renameSync } from "fs";
 import { pusherServer } from "../utils/PusherServer.js";
-import { MessageDeliveryStatus, MessageType, ReactionType } from "@prisma/client";
+import {
+  MessageDeliveryStatus,
+  MessageType,
+  ReactionType,
+} from "@prisma/client";
 
 export const addMessage = async (req, res, next) => {
   try {
@@ -32,9 +36,9 @@ export const addMessage = async (req, res, next) => {
               ? MessageDeliveryStatus.READ
               : MessageDeliveryStatus.SENT,
           chatId: privateChatId,
-          parentMessageId : parentMessageId || null,
+          parentMessageId: parentMessageId || null,
           parentMessageContent: parentMessage || null,
-          repliedByUserId : repliedBy.toString() || null
+          repliedByUserId: repliedBy.toString() || null,
         },
         select: {
           id: true,
@@ -47,7 +51,7 @@ export const addMessage = async (req, res, next) => {
           parentMessageId: true,
           parentMessageContent: true,
           repliedByUserId: true,
-          reactions:true
+          reactions: true,
         },
       });
 
@@ -78,16 +82,20 @@ export const addMessage = async (req, res, next) => {
       console.log(currentChatUser, senderId, currentChatUser === senderId);
       console.log(global.currentChatUserIdMap);
 
-      
       /*
       if no parentMessageContent then remove 
       {parentMessageId, parentMessageContent, repliedBy} from newMessage
       */
-     
-     let _newMessage = newMessage;
-     if(!newMessage.parentMessageId && !newMessage.parentMessageContent){
-       const {parentMessageId, parentMessageContent, repliedByUserId, ...rest} = newMessage;
-       _newMessage = rest;
+
+      let _newMessage = newMessage;
+      if (!newMessage.parentMessageId && !newMessage.parentMessageContent) {
+        const {
+          parentMessageId,
+          parentMessageContent,
+          repliedByUserId,
+          ...rest
+        } = newMessage;
+        _newMessage = rest;
       }
 
       if (isReceiverOnline && currentChatUser === senderId) {
@@ -161,9 +169,9 @@ export const getMessages = async (req, res, next) => {
     const messages = await prisma.messages.findMany({
       where: { chatId: privateChat.chat_id },
       orderBy: { sent_at: "asc" },
-      include:{
-        reactions: true
-      }
+      include: {
+        reactions: true,
+      },
     });
 
     res.status(200).json({ messages: messages, lastMessage });
@@ -209,27 +217,102 @@ export const addImageMessage = async (req, res, next) => {
   }
 };
 
-export const updateReaction = async(req, res, next)=>{
-  const {reactionType, parentMessageId, reactedByUserName, recieverId} = req.body;
-  console.log("reactionData", {reactionType, parentMessageId, reactedByUserName})
+export const updateReaction = async (req, res, next) => {
+  const {
+    reactionType,
+    parentMessageId,
+    reactedByUserName,
+    reactedByUserId,
+    recieverId,
+  } = req.body;
   try {
     const prismaInstance = getPrismaInstance();
     const reationData = await prismaInstance.messageReaction.create({
-      data:{
-        parentMessage: {connect:{ id: parentMessageId}},
+      data: {
+        parentMessage: { connect: { id: parentMessageId } },
         reactionType: ReactionType[reactionType],
-        reactedByUserName: reactedByUserName
-      }
-    })
-  /* if opposite user is online then send realtime reaction update*/  
-  const isRecieverOnline = onlineUsers.get(recieverId);
-  /* if opposite user is online but not currentChatUser send realtime reaction update*/  
-  const currentChatUser = global.currentChatUserIdMap.get(recieverId);
+        reactedByUserName: reactedByUserName,
+      },
+    });
 
+    /* if opposite user is online then send realtime reaction update
+     sender will act as reciver at reciever's end*/
+    const isRecieverOnline = onlineUsers.get(recieverId);
+    /* if opposite user is online but not currentChatUser send realtime reaction update*/
+    const currentChatUser = global.currentChatUserIdMap.get(recieverId);
+
+    if (isRecieverOnline && currentChatUser === reactedByUserId) {
+      pusherServer.trigger(isRecieverOnline, "private-message:reaction", {
+        reationData,
+        recieverId,
+        reactedByUserId,
+      });
+    } else {
+    }
     console.log("messageWithReaction", reationData);
     return res.status(201).send(reationData);
   } catch (error) {
-    next(error)
+    next(error);
   }
+};
 
-}
+export const editMessage = async (req, res, next) => {
+  const { id, editedContent, senderId, recieverId } = req.body;
+  console.log("editedMessage up", { id, editedContent, senderId, recieverId });
+  try {
+    const prismaInstance = getPrismaInstance();
+
+    const editedMessage = await prismaInstance.messages.update({
+      where: { id: id },
+      data: {
+        content: editedContent,
+        isEdited: true,
+        editedAt: new Date(),
+      },
+      select: {
+        id: true,
+        content: true,
+        isEdited: true,
+        editedAt: true,
+      },
+    });
+
+    /* if opposite user is online then send realtime update
+     sender will act as reciver at reciever's end*/
+    const isRecieverOnline = onlineUsers.get(recieverId);
+    /* if opposite user is online but not currentChatUser send realtime update*/
+    const currentChatUser = global.currentChatUserIdMap.get(recieverId);
+
+    if (isRecieverOnline && currentChatUser === senderId) {
+      pusherServer.trigger(isRecieverOnline, "private-message:edited", {
+        editedMessage,
+        recieverId,
+        senderId,
+      });
+    } else {
+    }
+    console.log("editedMessage", editedMessage);
+    return res.status(201).send(editedMessage);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteMessage = async (req, res, next) => {
+  const { id, deleteFor } = req.params;
+  try {
+    const prismInstance = getPrismaInstance();
+
+    await prismInstance.messages.update({
+      where: { id: id },
+      data: {
+        deletedFor: deleteFor,
+      },
+    });
+    const message =
+      deleteFor === "all" ? `You deleted this message` : "This Message was deleted";
+    return res.status(200).send({ message });
+  } catch (error) {
+    next(error);
+  }
+};
