@@ -6,40 +6,50 @@ import MessageStatus from "@/components/common/MessageStatus";
 import { FaChevronDown } from "react-icons/fa6";
 import { ImEvil2 } from "react-icons/im";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import { IoMdArrowDropleft } from "react-icons/io";
 import {
   menuItemsOnRecievedMessage,
   menuItemsOnSelf,
   reactionEmojis,
 } from "@/utils/handler";
-import EditMessage from "../common/EditMessage";
 import {
+  setMessageToEdit,
   setReplyEnabled,
   updateEmojiReaction,
 } from "@/features/chat/chatSlice";
 import MessageReplyBox from "./MessageRelpyBox";
 import ReactionEmojiPill from "../common/ReactionEmojiPill";
 
-const MessageContainer = ({ message }) => {
+const MessageContainer = (props) => {
+  const { message, setEditModalIsOpen, editing = false } = props;
   const { userInfo, currentChatUser } = useSelector(
     (state) => state.userReducer
   );
   const dispatch = useDispatch();
   const [fromSelf, setFromSelf] = React.useState(false);
 
-  const [editModalIsOpen, setEditModalIsOpen] = React.useState(false);
   const [isReactionEmojisVisible, setIsReactionEmojisVisible] =
     React.useState(false);
 
   const handleMenuAction = (action) => {
-    if (action.toLowerCase() === "reply") {
-      dispatch(
-        setReplyEnabled({
-          replyEnabled: true,
-          parentMessage: message?.content,
-          parentMessageId: message?.id,
-          fromSelf,
-        })
-      );
+    switch (action.toLowerCase()) {
+      case "reply":
+        dispatch(
+          setReplyEnabled({
+            replyEnabled: true,
+            parentMessage: message?.content,
+            parentMessageId: message?.id,
+            fromSelf,
+          })
+        );
+        break;
+      case "edit":        
+          dispatch(setMessageToEdit(message));
+          setEditModalIsOpen(true);        
+        break;
+
+      default:
+        break;
     }
   };
 
@@ -50,7 +60,8 @@ const MessageContainer = ({ message }) => {
         reactionType: emojiType,
         parentMessageId: message?.id,
         reactedByUserName: userInfo?.name,
-        recieverId: currentChatUser?.id
+        reactedByUserId: userInfo?.id,
+        recieverId: currentChatUser?.id,
       })
     );
   };
@@ -90,13 +101,13 @@ const MessageContainer = ({ message }) => {
                   {menuItemsOnSelf.map((menu) => (
                     <MenuItem key={menu.id}>
                       <button
-                        className="flex w-full items-center gap-2 rounded-lg py-1.5 px-3 data-[focus]:bg-white/10"
+                        className="group flex w-full items-center gap-2 rounded-lg py-1.5 px-3 data-[focus]:bg-white/10"
                         onClick={() => {
                           handleMenuAction(menu.label);
                           setFromSelf(true);
                         }}
                       >
-                        {menu.menuIcon}
+                          {menu.menuIcon}   
                         {menu.label}
                       </button>
                     </MenuItem>
@@ -139,6 +150,7 @@ const MessageContainer = ({ message }) => {
             </div>
             <div className="flex flex-row gap-1 items-end  bottom-1 right-1">
               <span className="block text-bubble-meta text-[10px] pt-0 min-w-fit">
+                <i className="mr-1">{message?.isEdited ? 'Edited':''}</i>
                 {calculateTime(message?.sent_at)}
               </span>
               <span className="block">
@@ -147,6 +159,7 @@ const MessageContainer = ({ message }) => {
                 )}
               </span>
             </div>
+            {/* Reaction button */}
             <button
               className={`absolute bg-gray-800 p-1 rounded-xl ${
                 message.senderId === currentChatUser.id ? "-right-7" : "-left-7"
@@ -179,14 +192,13 @@ const MessageContainer = ({ message }) => {
               </div>
             )}
 
-            {message?.reactions?.length > 0 && (
+            {!editing && message?.reactions?.length > 0 && (
               <ReactionEmojiPill reactions={message?.reactions} />
             )}
           </div>
         </>
       )}
       {message?.type === "image" && <ImageMessage message={message} />}
-      <EditMessage isOpen={editModalIsOpen} close={setEditModalIsOpen} />
     </div>
   );
 };

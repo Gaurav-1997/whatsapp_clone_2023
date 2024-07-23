@@ -56,4 +56,4 @@ function SearchMessages() {
   </div>;
 }
 
-export default SearchMessages;
+export default React.memo(SearchMessages);

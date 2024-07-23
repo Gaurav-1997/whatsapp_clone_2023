@@ -4,7 +4,7 @@ import ChatContainer from "./ChatContainer";
 import MessageBar from "./MessageBar";
 import { useSelector, useDispatch } from "react-redux";
 import { pusherClient } from "@/utils/PusherClient";
-import { addMessage } from "@/features/chat/chatSlice";
+import { addMessage, setChatReaction, setEditedMessage } from "@/features/chat/chatSlice";
 import { setLastMessageInfo } from "@/features/user/userSlice";
 function Chat() {
   const { chatId } = useSelector((reduxState) => reduxState.chatReducer);
@@ -14,10 +14,14 @@ function Chat() {
   React.useEffect(() => {
     pusherClient.subscribe(chatId);
     pusherClient.bind("message:sent", handleRecievedMessage);
-
+    pusherClient.bind("private-message:reaction", handleChatReaction);
+    pusherClient.bind("private-message:edited", handleEditedChat);
+    
     return () => {
       pusherClient.unsubscribe(chatId);
       pusherClient.unbind("message:sent", handleRecievedMessage);
+      pusherClient.unbind("private-message:reaction", handleChatReaction);
+      pusherClient.unbind("private-message:edited", handleEditedChat);
     };
   }, [chatId]);
 
@@ -38,6 +42,19 @@ function Chat() {
     }
   };
 
+  const handleChatReaction = (data)=>{
+    console.log("handleChatReaction:", data);
+    if(data?.recieverId === userInfo?.id){
+      dispatch(setChatReaction({...data}))
+    } 
+  }
+
+  const handleEditedChat = (data) =>{
+    console.log("handleEditedChat:", data);
+    if(data?.recieverId === userInfo?.id){
+      dispatch(setEditedMessage(data.editedMessage))
+    }
+  }
   return (
     <div className="border-conversation-border border-l bg-conversation-panel-background flex flex-col h-[100vh] z-10">
       <ChatHeader />

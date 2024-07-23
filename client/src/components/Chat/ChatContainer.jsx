@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useSelector, useDispatch } from "react-redux";
 import { BsPersonFillCheck, BsPersonX } from "react-icons/bs";
 import {
@@ -9,12 +10,15 @@ import {
 import { getMessages } from "@/features/chat/chatSlice";
 import MessageContainer from "./MessageContainer";
 
+const LazyEditMessageModal = dynamic(()=>import('../common/EditMessageModal'))
+
 function ChatContainer() {
   const dispatch = useDispatch();
   const { userInfo, currentChatUser, privateChatId } = useSelector(
     (state) => state.userReducer
   );
   const { messages, lastMessage } = useSelector((state) => state.chatReducer);
+  const [editModalIsOpen, setEditModalIsOpen] = React.useState(false);
 
   const chatContainerRef = useRef(null);
 
@@ -107,13 +111,14 @@ function ChatContainer() {
               <>
                 {messages?.map((message) => (
                   <div key={message.id}>
-                  <MessageContainer message={message} />
+                  <MessageContainer message={message} setEditModalIsOpen={setEditModalIsOpen} />
                   </div>
                 ))}
               </>
             )}
           </div>
         </div>
+        <LazyEditMessageModal isOpen={editModalIsOpen} setEditModalIsOpen={setEditModalIsOpen}/>
       </div>
     </div>
   );

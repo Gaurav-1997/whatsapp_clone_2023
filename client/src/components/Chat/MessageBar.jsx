@@ -9,6 +9,8 @@ import {
   sendMessage,
   sendImageMessage,
   setReplyEnabled,
+  editMessage,
+  setMessageToEdit,
 } from "@/features/chat/chatSlice";
 import PhotoPicker from "../common/PhotoPicker";
 import CaptureAudio from "../common/CaptureAudio";
@@ -18,14 +20,14 @@ import { RxCross2 } from "react-icons/rx";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"));
 
-function MessageBar() {
+function MessageBar(props) {
+  const {editing=false, setEditModalIsOpen} = props
   const inputRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const [grabPhoto, setGrabPhoto] = useState(false);
   const [showAudioRecorder, setAudioRecorder] = useState(false);
-  const { messages, replyEnabled, parentMessage, parentMessageId, fromSelf } =
+  const { messages, replyEnabled, parentMessage, parentMessageId, fromSelf, messageToEdit } =
     useSelector((reduxState) => reduxState.chatReducer);
-    console.log("fromSelf", fromSelf)
   useEffect(() => {
     const checkPress = (event) => {
       if (event.key === "/") {
@@ -69,8 +71,9 @@ function MessageBar() {
       };
     }
   }, [grabPhoto]);
-
-  const [message, setMessage] = useState("");
+  
+  console.log("messageToEdit:", messageToEdit)
+  const [message, setMessage] = useState(messageToEdit?.content || '');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const handleEmojiModal = () => {
@@ -108,7 +111,20 @@ function MessageBar() {
 
   const handleSendMessage = () => {
     dispatch(setUserOnTop({ id: currentChatUser?.id }));
-    dispatch(
+    if(editing){
+      dispatch(editMessage({                  
+        id:messageToEdit?.id,
+        editedContent: message,
+        senderId: userInfo?.id,
+        recieverId: currentChatUser?.id
+      }))
+      setEditModalIsOpen(false);
+      dispatch(setMessageToEdit({}))
+      setMessage('')
+      return;
+    }
+
+     dispatch(
       sendMessage({
         senderId: userInfo?.id,
         recieverId: currentChatUser?.id,
@@ -117,7 +133,7 @@ function MessageBar() {
         privateChatId: privateChatId,
         parentMessageId,
         parentMessage,
-        repliedBy : fromSelf ? userInfo?.id : currentChatUser?.id
+        repliedBy : userInfo?.id
       })
     );
     dispatch(
@@ -152,7 +168,7 @@ function MessageBar() {
   return (
     <div className="flex flex-col w-[100%]">
       {replyEnabled && (
-        <div className="bg-panel-header-background flex transform transition-all duration-1000 ease-out translate-y-0 opacity-100 animate-[enter_0.9s_ease-out]">
+        <div className="bg-panel-header-background flex transition ease-in-out duration-500">
           <div className="container m-2 p-4 flex rounded-lg bg-slate-800">
             <div
               className="w-2 h-[100%] bg-green-500 rounded-sm"

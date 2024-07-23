@@ -5,6 +5,7 @@ const MessageRelpyBox = ({message}) => {
     const { userInfo, currentChatUser } = useSelector(
         (state) => state.userReducer
       );
+      
   return (
     <>
       <a
@@ -12,7 +13,6 @@ const MessageRelpyBox = ({message}) => {
         href={`#${message?.parentMessageId}`}
         target="_self"
       >
-        {/* <div className="w-1 bg-stone-100 z-0"></div> */}
         <div className="flex flex-col m-1">
           <span className="text-[#1cc9a9] font-semibold">
             {Number(message?.repliedByUserId) === userInfo?.id

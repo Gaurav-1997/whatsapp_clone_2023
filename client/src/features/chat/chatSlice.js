@@ -23,6 +23,7 @@ const initialState = {
   parentMessage: null,
   parentMessageId: null,
   fromSelf: true,
+  messageToEdit:{}
 };
 
 export const addUser = createAsyncThunk("addUser", async (id) => {
@@ -91,12 +92,23 @@ export const updateEmojiReaction = createAsyncThunk(
   "updateEmojiReaction",
   async (reactionData = {}) => {
     try {
-      const { data } = await axios.post(REACTION_MESSAGES_ROUTE, {...reactionData});
+      const { data } = await axios.post(REACTION_MESSAGES_ROUTE, {
+        ...reactionData,
+      });
       console.log("updateEmojiReaction", data);
-      return data
+      return data;
     } catch (error) {}
   }
 );
+
+export const editMessage = createAsyncThunk("editMessage", async(editedData)=>{
+  try {
+    const {data} = await axios.put(ADD_MESSAGES_ROUTE, {...editedData})    
+    return data;
+  } catch (error) {
+    console.error(error)
+  }
+})
 
 const chatSlice = createSlice({
   name: "chat",
@@ -125,6 +137,28 @@ const chatSlice = createSlice({
         ...action.payload,
       };
     },
+    setChatReaction: (state, action) => {
+      console.log("setChatReaction", action.payload);
+      const index = state.messages.findIndex(
+        (message) => message.id === action.payload.reationData.parentMessageId
+      );
+      let _messages = state.messages[index];
+      _messages.reactions = [
+        ..._messages.reactions,
+        action.payload.reationData,
+      ];
+      state.messages[index] = _messages;
+    },
+    setMessageToEdit: (state, action)=>{
+      state.messageToEdit = action.payload
+    },
+    setEditedMessage:(state, action)=>{
+      const index = state.messages.findIndex(msg => msg.id===action.payload.id)
+      // edited-content      
+      state.messages[index].content = action.payload.content
+      state.messages[index].isEdited = action.payload.isEdited
+      state.messages[index].editedAt = action.payload.editedAt
+    }
   },
   extraReducers: (builder) => {
     builder.addCase(addUser.pending, (state) => {
@@ -165,19 +199,27 @@ const chatSlice = createSlice({
     builder.addCase(sendImageMessage.fulfilled, (state, action) => {
       state.messages.push({ ...action.payload.message, fromSelf: true });
     });
-    builder.addCase(updateEmojiReaction.pending, (state, action) =>{
+    builder.addCase(updateEmojiReaction.pending, (state, action) => {
       console.log("updateEmojiReaction.pending", action.payload);
-    })
-    builder.addCase(updateEmojiReaction.fulfilled, (state, action) =>{
-      const index = state.messages.findIndex(message=> message.id === action.payload.parentMessageId)
+    });
+    builder.addCase(updateEmojiReaction.fulfilled, (state, action) => {
+      const index = state.messages.findIndex(
+        (message) => message.id === action.payload.parentMessageId
+      );
       let _messages = state.messages[index];
-      _messages.reactions = [..._messages.reactions ,action.payload];
+      _messages.reactions = [..._messages.reactions, action.payload];
       state.messages[index] = _messages;
-      
-      console.log("updateEmojiReaction.fulfilled", JSON.parse(JSON.stringify(state.messages[index]?.reactions)));
-    })
-    builder.addCase(updateEmojiReaction.rejected, (state, action) =>{
+    });
+    builder.addCase(updateEmojiReaction.rejected, (state, action) => {
       console.log("updateEmojiReaction.rejected", action.payload);
+    });
+    builder.addCase(editMessage.fulfilled, (state, action)=>{
+      // console.log("editMessage.fulfilled",action.payload)
+      const index = state.messages.findIndex(msg => msg.id===action.payload.id)
+      // edited-content      
+      state.messages[index].content = action.payload.content
+      state.messages[index].isEdited = action.payload.isEdited
+      state.messages[index].editedAt = action.payload.editedAt      
     })
   },
 });
@@ -188,6 +230,9 @@ export const {
   setChatId,
   setChatUserId,
   setReplyEnabled,
+  setChatReaction,
+  setMessageToEdit,
+  setEditedMessage
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
