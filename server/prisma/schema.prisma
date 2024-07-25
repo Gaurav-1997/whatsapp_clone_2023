@@ -95,6 +95,7 @@ model Messages {
   reactions            MessageReaction[]
   isEdited             Boolean?
   editedAt             DateTime?
+  deletedFor           String?
 }
 
 model MessageReaction {

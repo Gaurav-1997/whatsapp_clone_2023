@@ -298,20 +298,36 @@ export const editMessage = async (req, res, next) => {
   }
 };
 
-export const deleteMessage = async (req, res, next) => {
-  const { id, deleteFor } = req.params;
+export const partialDeleteMessage = async (req, res, next) => {
+  const { id, deletedFor } = req.body;
+  console.log("partialDeleteMessage", req.body)
   try {
     const prismInstance = getPrismaInstance();
 
     await prismInstance.messages.update({
       where: { id: id },
       data: {
-        deletedFor: deleteFor,
+        deletedFor: String(deletedFor),
       },
     });
-    const message =
-      deleteFor === "all" ? `You deleted this message` : "This Message was deleted";
-    return res.status(200).send({ message });
+
+    return res.status(200).send({ id, deletedFor });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const permaDeleteMessage = async (req, res, next) => {
+  const { id } = req.params;
+  console.log("permaDeleteMessage", req.params)
+  try {
+    const prismInstance = getPrismaInstance();
+
+    await prismInstance.messages.delete({
+      where: { id: id },
+    });
+    
+    return res.status(200).send({ message:'deleted', id });
   } catch (error) {
     next(error);
   }
