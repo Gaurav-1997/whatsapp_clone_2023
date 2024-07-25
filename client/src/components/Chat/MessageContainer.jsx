@@ -3,28 +3,33 @@ import { useDispatch, useSelector } from "react-redux";
 import ImageMessage from "./ImageMessage";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
-import { FaChevronDown } from "react-icons/fa6";
 import { ImEvil2 } from "react-icons/im";
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import { IoMdArrowDropleft } from "react-icons/io";
+import { MdOutlineBlock } from "react-icons/md";
 import {
   menuItemsOnRecievedMessage,
   menuItemsOnSelf,
   reactionEmojis,
 } from "@/utils/handler";
 import {
+  partialDelete,
+  permaDelete,
   setMessageToEdit,
   setReplyEnabled,
   updateEmojiReaction,
 } from "@/features/chat/chatSlice";
 import MessageReplyBox from "./MessageRelpyBox";
 import ReactionEmojiPill from "../common/ReactionEmojiPill";
+import dynamic from "next/dynamic";
+
+const DropDownMenu = dynamic(() => import("../common/DropDownMenu"));
 
 const MessageContainer = (props) => {
   const { message, setEditModalIsOpen, editing = false } = props;
+
   const { userInfo, currentChatUser } = useSelector(
     (state) => state.userReducer
   );
+  // if (message?.deletedFor === userInfo?.id) return;
   const dispatch = useDispatch();
   const [fromSelf, setFromSelf] = React.useState(false);
 
@@ -43,9 +48,18 @@ const MessageContainer = (props) => {
           })
         );
         break;
-      case "edit":        
-          dispatch(setMessageToEdit(message));
-          setEditModalIsOpen(true);        
+      case "edit":
+        dispatch(setMessageToEdit(message));
+        setEditModalIsOpen(true);
+        break;
+      case "delete_for_me":
+        dispatch(partialDelete({id:message?.id, deletedFor: String(userInfo?.id)}));        
+        break;
+      case "delete_for_everyone":
+        dispatch(partialDelete({id:message?.id, deletedFor: "all"}));        
+        break;
+      case "delete":
+        dispatch(permaDelete({id: message?.id}));        
         break;
 
       default:
@@ -66,6 +80,37 @@ const MessageContainer = (props) => {
     );
   };
 
+  if (isNaN(message?.deletedFor)) {
+    return (
+      <div
+        id={message?.id}
+        className={`flex ${
+          message.senderId === currentChatUser.id
+            ? "justify-start"
+            : "justify-end"
+        } px-1`}
+      >
+        <div
+          className={`message-container group relative flex flex-col text-white px-2 py-1 text-sm rounded-md gap-1 items-end max-w-[70%]
+  ${
+    message.senderId !== currentChatUser.id
+      ? "bg-incoming-background"
+      : "bg-outgoing-background"
+  }`}
+        >
+          <div className="flex gap-1 items-center break-all text-left w-full mr-1">
+            <MdOutlineBlock className="size-4 fill-white/30" />
+            <span>
+              {message?.senderId === userInfo?.id
+                ? "You deleted this message"
+                : "This message is delted"}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       id={message?.id}
@@ -75,6 +120,7 @@ const MessageContainer = (props) => {
           : "justify-end"
       } px-1`}
     >
+      {isNaN(message?.deletedFor)}
       {message.type === "TEXT" && (
         <>
           <div
@@ -88,59 +134,19 @@ const MessageContainer = (props) => {
   `}
           >
             {!(message.senderId === currentChatUser.id) ? (
-              <Menu>
-                <MenuButton className="absolute right-1 top-1 cursor-pointer opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out">
-                  <FaChevronDown className="size-4 fill-white/60" />
-                </MenuButton>
-
-                <MenuItems
-                  transition
-                  anchor="bottom end"
-                  className="z-10 w-52 origin-top-right rounded-xl border border-white/5 bg-gray-800/50 backdrop-blur-lg p-1 text-sm/6 text-white transition duration-100 ease-out [--anchor-gap:var(--spacing-1)] focus:outline-none data-[closed]:scale-95 data-[closed]:opacity-0"
-                >
-                  {menuItemsOnSelf.map((menu) => (
-                    <MenuItem key={menu.id}>
-                      <button
-                        className="group flex w-full items-center gap-2 rounded-lg py-1.5 px-3 data-[focus]:bg-white/10"
-                        onClick={() => {
-                          handleMenuAction(menu.label);
-                          setFromSelf(true);
-                        }}
-                      >
-                          {menu.menuIcon}   
-                        {menu.label}
-                      </button>
-                    </MenuItem>
-                  ))}
-                </MenuItems>
-              </Menu>
+              <DropDownMenu
+                anchor={"bottom end"}
+                menuItems={menuItemsOnSelf}
+                handleMenuAction={handleMenuAction}
+                setFromSelf={setFromSelf}
+              />
             ) : (
-              <Menu>
-                <MenuButton className="absolute right-1 top-1 cursor-pointer opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out">
-                  <FaChevronDown className="size-4 fill-white/60" />
-                </MenuButton>
-
-                <MenuItems
-                  transition
-                  anchor="bottom start"
-                  className="z-10 w-52 origin-top-right rounded-xl border border-white/5 bg-green-950/50 backdrop-blur-lg p-1 text-sm/6 text-white transition duration-100 ease-out [--anchor-gap:var(--spacing-1)] focus:outline-none data-[closed]:scale-95 data-[closed]:opacity-0"
-                >
-                  {menuItemsOnRecievedMessage.map((menu) => (
-                    <MenuItem key={menu.id}>
-                      <button
-                        className="flex w-full items-center gap-2 rounded-lg py-1.5 px-3 data-[focus]:bg-white/10"
-                        onClick={() => {
-                          handleMenuAction(menu.label);
-                          setFromSelf(false);
-                        }}
-                      >
-                        {menu.menuIcon}
-                        {menu.label}
-                      </button>
-                    </MenuItem>
-                  ))}
-                </MenuItems>
-              </Menu>
+              <DropDownMenu
+                anchor={"bottom start"}
+                menuItems={menuItemsOnRecievedMessage}
+                handleMenuAction={handleMenuAction}
+                setFromSelf={setFromSelf}
+              />
             )}
             {message?.parentMessageContent && message?.parentMessageId && (
               <MessageReplyBox message={message} />
@@ -150,7 +156,7 @@ const MessageContainer = (props) => {
             </div>
             <div className="flex flex-row gap-1 items-end  bottom-1 right-1">
               <span className="block text-bubble-meta text-[10px] pt-0 min-w-fit">
-                <i className="mr-1">{message?.isEdited ? 'Edited':''}</i>
+                <i className="mr-1">{message?.isEdited ? "Edited" : ""}</i>
                 {calculateTime(message?.sent_at)}
               </span>
               <span className="block">

@@ -5,6 +5,7 @@ import {
   ADD_MESSAGES_ROUTE,
   ADD_IMAGE_MESSAGE_ROUTE,
   REACTION_MESSAGES_ROUTE,
+  DELETE_MESSAGES_ROUTE,
 } from "@/utils/ApiRoutes";
 import axios from "axios";
 
@@ -107,6 +108,26 @@ export const editMessage = createAsyncThunk("editMessage", async(editedData)=>{
     return data;
   } catch (error) {
     console.error(error)
+  }
+})
+
+export const partialDelete = createAsyncThunk("partialDelete", async(params={})=>{
+  try {
+    const {data} = axios.put(DELETE_MESSAGES_ROUTE, {...params});
+    console.log("partialDelete:",data)
+    return data;
+  } catch (error) {
+    console.error(error)    
+  }
+})
+
+export const permaDelete = createAsyncThunk("permaDelete", async(params={})=>{
+  try {
+    const deleteMessageUrl = `${DELETE_MESSAGES_ROUTE}/${params.id}`
+    const {data} = axios.delete(deleteMessageUrl);
+    return data
+  } catch (error) {
+    console.error(error)    
   }
 })
 
@@ -220,6 +241,21 @@ const chatSlice = createSlice({
       state.messages[index].content = action.payload.content
       state.messages[index].isEdited = action.payload.isEdited
       state.messages[index].editedAt = action.payload.editedAt      
+    });
+    builder.addCase(partialDelete.pending, (state, action)=>{
+      console.log("partialDelete.pending",action.payload)
+    })
+    builder.addCase(partialDelete.fulfilled, (state, action)=>{
+      const index = state.messages.findIndex(msg=> msg.id === action.payload.id);
+      
+      state.messages[index].deletedFor = Number(action.payload.deletedFor);
+    })
+    builder.addCase(partialDelete.rejected, (state, action)=>{
+      console.log("partialDelete.rejected", action.payload);
+    })
+    builder.addCase(permaDelete.fulfilled, (state, action)=>{
+      const updatedMessages = state.messages.filter(msg => msg.id === action.payload.id)
+      state.messages = updatedMessages
     })
   },
 });
