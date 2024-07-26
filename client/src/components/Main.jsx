@@ -108,7 +108,7 @@ function Main() {
 
   return (
     <>
-      <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-screen transition-translate duration-300 ease-in-out overflow-hidden">
+      <div className="grid grid-cols-main h-screen w-auto max-h-screen max-w-screen p-2 bg-cyan-700 transition-translate duration-300 ease-in-out overflow-hidden">
         <ChatList />
 
         {userInfo && currentChatUser ? (

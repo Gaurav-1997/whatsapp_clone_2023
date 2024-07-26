@@ -1,4 +1,3 @@
-import { MenuItem } from "@headlessui/react";
 import { TiDelete } from "react-icons/ti";
 import { MdEdit, MdOutlineReply, MdPushPin } from "react-icons/md";
 import { RiDeleteBin6Fill, RiChatDeleteFill } from "react-icons/ri";
@@ -58,10 +57,17 @@ export const menuItemsOnRecievedMessage = [
   {
     id: "mi-3",
     label: "Delete",
-    action: "delete",
+    action: "delete_recieved_chat",
     menuIcon: <RiChatDeleteFill className="size-4 fill-white/30" />,
   },
 ];
+
+export const permaDeleteMenu = [{
+  id: "mi-delete",
+  label: "Delete",
+  action: "delete",
+  menuIcon: <TiDelete className="size-4 fill-white/30" />,
+},]
 
 export const reactionEmojis = {
   LIKE: "👍",

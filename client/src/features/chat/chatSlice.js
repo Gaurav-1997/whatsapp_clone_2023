@@ -111,20 +111,21 @@ export const editMessage = createAsyncThunk("editMessage", async(editedData)=>{
   }
 })
 
-export const partialDelete = createAsyncThunk("partialDelete", async(params={})=>{
+export const partialDelete = createAsyncThunk("partialDelete", async({id, deletedFor, deletedBy, recieverId})=>{
   try {
-    const {data} = axios.put(DELETE_MESSAGES_ROUTE, {...params});
-    console.log("partialDelete:",data)
-    return data;
+    const {data} = await axios.put(DELETE_MESSAGES_ROUTE, {id, deletedFor,deletedBy, recieverId});
+    console.log("")
+    return {...data, deletedBy};
   } catch (error) {
     console.error(error)    
   }
 })
 
-export const permaDelete = createAsyncThunk("permaDelete", async(params={})=>{
+export const permaDelete = createAsyncThunk("permaDelete", async({id, senderId, recieverId})=>{
   try {
-    const deleteMessageUrl = `${DELETE_MESSAGES_ROUTE}/${params.id}`
-    const {data} = axios.delete(deleteMessageUrl);
+    console.log("permaDelete",{id, senderId, recieverId})
+    const deleteMsgURL = `${DELETE_MESSAGES_ROUTE}/${id}/${senderId}/${recieverId}`
+    const {data} = await axios.delete(deleteMsgURL);
     return data
   } catch (error) {
     console.error(error)    
@@ -179,6 +180,14 @@ const chatSlice = createSlice({
       state.messages[index].content = action.payload.content
       state.messages[index].isEdited = action.payload.isEdited
       state.messages[index].editedAt = action.payload.editedAt
+    },
+    setMsgDeletedForEveryone :(state, action) =>{
+      const index = state.messages.findIndex(msg=> msg.id === action.payload.id);
+      state.messages[index].deletedFor = action.payload.deletedFor;
+    },
+    messageDelete:(state, action)=>{
+      const updatedMessages = state.messages.filter(msg => msg.id !== action.payload.id)
+      state.messages = updatedMessages
     }
   },
   extraReducers: (builder) => {
@@ -246,15 +255,21 @@ const chatSlice = createSlice({
       console.log("partialDelete.pending",action.payload)
     })
     builder.addCase(partialDelete.fulfilled, (state, action)=>{
-      const index = state.messages.findIndex(msg=> msg.id === action.payload.id);
-      
-      state.messages[index].deletedFor = Number(action.payload.deletedFor);
+      if(Number(action.payload.deletedFor) === action.payload.deletedBy){
+        const updatedMessages = state.messages.filter(msg => msg.id !== action.payload.id)
+        state.messages = updatedMessages        
+        return
+      }
+      // if deletedFor == 'all'
+        const index = state.messages.findIndex(msg=> msg.id === action.payload.id);
+        state.messages[index].deletedFor = action.payload.deletedFor;
+    
     })
     builder.addCase(partialDelete.rejected, (state, action)=>{
       console.log("partialDelete.rejected", action.payload);
     })
     builder.addCase(permaDelete.fulfilled, (state, action)=>{
-      const updatedMessages = state.messages.filter(msg => msg.id === action.payload.id)
+      const updatedMessages = state.messages.filter(msg => msg.id !== action.payload.id)
       state.messages = updatedMessages
     })
   },
@@ -268,7 +283,9 @@ export const {
   setReplyEnabled,
   setChatReaction,
   setMessageToEdit,
-  setEditedMessage
+  setEditedMessage,
+  setMsgDeletedForEveryone,
+  messageDelete
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

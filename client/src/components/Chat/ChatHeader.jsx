@@ -14,7 +14,7 @@ function ChatHeader() {
   const dispatch = useDispatch();
 
   return (
-    <div className="h-16 px-4 py-3 flex justify-between items-center bg-panel-header-background z-10">
+    <div className="h-16 px-4 py-3 flex justify-between items-center bg-panel-header-background z-10 rounded-tr-lg">
       <div
         className="flex items-center gap-6 relative"
         title={`${currentChatUserStatus ? "online" : "offline"}`}

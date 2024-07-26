@@ -9,6 +9,7 @@ import {
   menuItemsOnRecievedMessage,
   menuItemsOnSelf,
   reactionEmojis,
+  permaDeleteMenu,
 } from "@/utils/handler";
 import {
   partialDelete,
@@ -29,7 +30,15 @@ const MessageContainer = (props) => {
   const { userInfo, currentChatUser } = useSelector(
     (state) => state.userReducer
   );
-  // if (message?.deletedFor === userInfo?.id) return;
+
+  /*message donot  render for delete_for_me action*/
+  if (
+    message?.deletedFor &&
+    (Number(message?.deletedFor) === userInfo?.id)
+    // Number(message?.deletedFor) === currentChatUser?.id)
+  )
+    return;
+
   const dispatch = useDispatch();
   const [fromSelf, setFromSelf] = React.useState(false);
 
@@ -53,13 +62,72 @@ const MessageContainer = (props) => {
         setEditModalIsOpen(true);
         break;
       case "delete_for_me":
-        dispatch(partialDelete({id:message?.id, deletedFor: String(userInfo?.id)}));        
+        dispatch(
+          partialDelete({
+            id: message?.id,
+            deletedFor: String(userInfo?.id),
+            deletedBy: userInfo?.id,
+            recieverId: currentChatUser?.id,
+          })
+        );
         break;
       case "delete_for_everyone":
-        dispatch(partialDelete({id:message?.id, deletedFor: "all"}));        
+        dispatch(
+          partialDelete({
+            id: message?.id,
+            deletedFor: "all",
+            deletedBy: userInfo?.id,
+            recieverId: currentChatUser?.id,
+          })
+        );
         break;
       case "delete":
-        dispatch(permaDelete({id: message?.id}));        
+        if (message?.senderId === currentChatUser?.id) {
+          if (Number(message?.deletedFor) === currentChatUser?.id) {
+            permaDelete({
+              id: message?.id,
+              senderId: userInfo?.id,
+              recieverId: currentChatUser?.id,
+            });
+          } else {
+            dispatch(
+              partialDelete({
+                id: message?.id,
+                deletedFor: String(userInfo?.id),
+                deletedBy: userInfo?.id,
+                recieverId: currentChatUser?.id,
+              })
+            );
+          }
+        }
+
+        dispatch(
+          permaDelete({
+            id: message?.id,
+            senderId: userInfo?.id,
+            recieverId: currentChatUser?.id,
+          })
+        );
+        break;
+      case "delete_recieved_chat":
+        // check if sender deleted this chat for himself
+        //then permanent delete message
+        if (Number(message?.deletedFor) === currentChatUser?.id) {
+          permaDelete({
+            id: message?.id,
+            senderId: userInfo?.id,
+            recieverId: currentChatUser?.id,
+          });
+        } else {
+          dispatch(
+            partialDelete({
+              id: message?.id,
+              deletedFor: userInfo?.id,
+              deletedBy: userInfo?.id,
+              recieverId: currentChatUser?.id,
+            })
+          );
+        }
         break;
 
       default:
@@ -80,7 +148,8 @@ const MessageContainer = (props) => {
     );
   };
 
-  if (isNaN(message?.deletedFor)) {
+  /* message deleted for everyone */
+  if (message?.deletedFor === "all") {
     return (
       <div
         id={message?.id}
@@ -99,12 +168,29 @@ const MessageContainer = (props) => {
   }`}
         >
           <div className="flex gap-1 items-center break-all text-left w-full mr-1">
-            <MdOutlineBlock className="size-4 fill-white/30" />
-            <span>
-              {message?.senderId === userInfo?.id
-                ? "You deleted this message"
-                : "This message is delted"}
-            </span>
+            {!(message.senderId === currentChatUser.id) ? (
+              <DropDownMenu
+                anchor={"bottom end"}
+                menuItems={permaDeleteMenu}
+                handleMenuAction={handleMenuAction}
+                setFromSelf={setFromSelf}
+              />
+            ) : (
+              <DropDownMenu
+                anchor={"bottom start"}
+                menuItems={permaDeleteMenu}
+                handleMenuAction={handleMenuAction}
+                setFromSelf={setFromSelf}
+              />
+            )}
+            <>
+              <MdOutlineBlock className="size-4 fill-white/30" />
+              <span>
+                {message?.senderId === userInfo?.id
+                  ? "You deleted this message"
+                  : "This message is deleted"}
+              </span>
+            </>
           </div>
         </div>
       </div>

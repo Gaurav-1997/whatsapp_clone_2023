@@ -20,7 +20,7 @@ function ChatList() {
     }
   }, [contactsPage]);
   return (
-    <div className="bg-panel-header-background flex flex-col max-h-screen z-20" draggable>
+    <div className="bg-panel-header-background flex flex-col max-h-screen z-20 rounded-l-lg" draggable>
       {pageType === "default"  && (
         <>
           <ChatListHeader />
