@@ -22,7 +22,7 @@ const uploadImage = multer({ dest: "uploads/images/" });
 router.post("/add-messages", addMessage);
 router.put("/add-messages", editMessage);
 router.put("/delete-message", partialDeleteMessage);
-router.delete("/delete-message/:id", permaDeleteMessage);
+router.delete("/delete-message/:id/:senderId/:recieverId", permaDeleteMessage);
 router.get("/get-messages/:privateChatId/:recieverId/:senderId", getMessages);
 router.post("/add-image-message", uploadImage.single("image"), addImageMessage);
 router.post("/reaction-message", updateReaction);

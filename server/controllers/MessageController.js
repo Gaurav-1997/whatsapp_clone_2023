@@ -52,6 +52,7 @@ export const addMessage = async (req, res, next) => {
           parentMessageContent: true,
           repliedByUserId: true,
           reactions: true,
+          deletedFor:true
         },
       });
 
@@ -299,26 +300,42 @@ export const editMessage = async (req, res, next) => {
 };
 
 export const partialDeleteMessage = async (req, res, next) => {
-  const { id, deletedFor } = req.body;
-  console.log("partialDeleteMessage", req.body)
+  const { id, deletedFor,deletedBy, recieverId } = req.body;
   try {
     const prismInstance = getPrismaInstance();
-
+    
     await prismInstance.messages.update({
       where: { id: id },
       data: {
         deletedFor: String(deletedFor),
-      },
-    });
+      }});
+    
+    if(deletedFor === 'all'){
 
-    return res.status(200).send({ id, deletedFor });
+      /* if opposite user is online then send realtime update
+      sender will act as reciver at reciever's end*/
+      const isRecieverOnline = onlineUsers.get(recieverId);
+      /* if opposite user is online but not currentChatUser send realtime update*/
+      const currentChatUser = global.currentChatUserIdMap.get(recieverId);
+      
+      if (isRecieverOnline && currentChatUser === deletedBy) {
+        pusherServer.trigger(isRecieverOnline, "private-message:deletedForEveryOne", {
+          id, deletedFor,
+          recieverId          
+        });
+      } else {
+        // send deleted notification to reciever as unread message
+      }
+    }
+
+    return res.status(201).send({id, deletedFor});
   } catch (error) {
     next(error);
   }
 };
 
 export const permaDeleteMessage = async (req, res, next) => {
-  const { id } = req.params;
+  const { id, senderId, recieverId } = req.params;
   console.log("permaDeleteMessage", req.params)
   try {
     const prismInstance = getPrismaInstance();
@@ -326,6 +343,19 @@ export const permaDeleteMessage = async (req, res, next) => {
     await prismInstance.messages.delete({
       where: { id: id },
     });
+
+    /* if opposite user is online then send realtime update
+      sender will act as reciver at reciever's end*/
+      const isRecieverOnline = onlineUsers.get(Number(recieverId));
+      /* if opposite user is online but not currentChatUser send realtime update*/
+      const currentChatUser = global.currentChatUserIdMap.get(Number(recieverId));
+
+      if (isRecieverOnline && String(currentChatUser)===String(senderId)) {
+        pusherServer.trigger(isRecieverOnline, "private-message:delete", {
+          id,
+          recieverId          
+        });
+      }
     
     return res.status(200).send({ message:'deleted', id });
   } catch (error) {
