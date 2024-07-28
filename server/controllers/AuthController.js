@@ -172,10 +172,6 @@ export const friendRequestHandler = async (req, res, next) => {
     const chatId = global.onlineUsers.get(to);
 
     const [requester] = await prisma.$transaction(async (prismaTx) => {
-      // if (
-      //   !existingFriend.friends.includes(from) &&
-      //   !existingFriend.pendingRequest.includes(from)
-      // ) {
       // add appoverId i.e, to in requestSentTo field
       const requester = await prismaTx.user.update({
         where: { id: from },
@@ -213,12 +209,6 @@ export const friendRequestHandler = async (req, res, next) => {
       });
 
       return [requester];
-      // }
-      // else {
-      //   return res
-      //     .status(200)
-      //     .json({ message: "User already a friend or in pendingRequest" });
-      // }
     });
 
     return res.status(200).json({

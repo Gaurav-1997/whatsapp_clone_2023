@@ -6,6 +6,7 @@ import {
   MessageType,
   ReactionType,
 } from "@prisma/client";
+import { getCurrenChatUserFor, getUserStatus } from "../utils/helpers.js";
 
 export const addMessage = async (req, res, next) => {
   try {
@@ -21,9 +22,12 @@ export const addMessage = async (req, res, next) => {
       repliedBy = "",
     } = req.body;
 
-    const isReceiverOnline = onlineUsers.get(recieverId);
+    const isReceiverOnline = getIsReceiverOnline(recieverId);
+    //  onlineUsers.get(recieverId);
+
     // sender should be currentChatUser for reciever to read the message
-    const currentChatUser = global.currentChatUserIdMap.get(recieverId);
+    const currentChatUser = getCurrenChatUserFor(recieverId);
+    // global.currentChatUserIdMap.get(recieverId);
 
     if (message && senderId) {
       const newMessage = await prisma.messages.create({
@@ -52,7 +56,7 @@ export const addMessage = async (req, res, next) => {
           parentMessageContent: true,
           repliedByUserId: true,
           reactions: true,
-          deletedFor:true
+          deletedFor: true,
         },
       });
 
@@ -300,35 +304,40 @@ export const editMessage = async (req, res, next) => {
 };
 
 export const partialDeleteMessage = async (req, res, next) => {
-  const { id, deletedFor,deletedBy, recieverId } = req.body;
+  const { id, deletedFor, deletedBy, recieverId } = req.body;
   try {
     const prismInstance = getPrismaInstance();
-    
+
     await prismInstance.messages.update({
       where: { id: id },
       data: {
         deletedFor: String(deletedFor),
-      }});
-    
-    if(deletedFor === 'all'){
+      },
+    });
 
+    if (deletedFor === "all") {
       /* if opposite user is online then send realtime update
       sender will act as reciver at reciever's end*/
       const isRecieverOnline = onlineUsers.get(recieverId);
       /* if opposite user is online but not currentChatUser send realtime update*/
       const currentChatUser = global.currentChatUserIdMap.get(recieverId);
-      
+
       if (isRecieverOnline && currentChatUser === deletedBy) {
-        pusherServer.trigger(isRecieverOnline, "private-message:deletedForEveryOne", {
-          id, deletedFor,
-          recieverId          
-        });
+        pusherServer.trigger(
+          isRecieverOnline,
+          "private-message:deletedForEveryOne",
+          {
+            id,
+            deletedFor,
+            recieverId,
+          }
+        );
       } else {
         // send deleted notification to reciever as unread message
       }
     }
 
-    return res.status(201).send({id, deletedFor});
+    return res.status(201).send({ id, deletedFor });
   } catch (error) {
     next(error);
   }
@@ -336,7 +345,7 @@ export const partialDeleteMessage = async (req, res, next) => {
 
 export const permaDeleteMessage = async (req, res, next) => {
   const { id, senderId, recieverId } = req.params;
-  console.log("permaDeleteMessage", req.params)
+  console.log("permaDeleteMessage", req.params);
   try {
     const prismInstance = getPrismaInstance();
 
@@ -346,18 +355,125 @@ export const permaDeleteMessage = async (req, res, next) => {
 
     /* if opposite user is online then send realtime update
       sender will act as reciver at reciever's end*/
-      const isRecieverOnline = onlineUsers.get(Number(recieverId));
-      /* if opposite user is online but not currentChatUser send realtime update*/
-      const currentChatUser = global.currentChatUserIdMap.get(Number(recieverId));
+    const isRecieverOnline = onlineUsers.get(Number(recieverId));
+    /* if opposite user is online but not currentChatUser send realtime update*/
+    const currentChatUser = global.currentChatUserIdMap.get(Number(recieverId));
 
-      if (isRecieverOnline && String(currentChatUser)===String(senderId)) {
-        pusherServer.trigger(isRecieverOnline, "private-message:delete", {
-          id,
-          recieverId          
-        });
+    if (isRecieverOnline && String(currentChatUser) === String(senderId)) {
+      pusherServer.trigger(isRecieverOnline, "private-message:delete", {
+        id,
+        recieverId,
+      });
+    }
+
+    return res.status(200).send({ message: "deleted", id });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const setMessageSchedule = async (req, res, next) => {
+  try {
+    const {
+      senderId,
+      recieverId,
+      messageContent,
+      type,
+      scheduleTime,
+      privateChatId,
+    } = req.body;
+    const prismaInstance = getPrismaInstance();
+    await prismaInstance.scheduledMessages.create({
+      data: {
+        senderId: senderId,
+        recieverId: recieverId,
+        content: messageContent,
+        chatId: privateChatId,
+        type: MessageType[type],
+        scheduleTime: scheduleTime,
+        status: StatusType.PENDING,
+      },
+    });
+
+    return res
+      .send(200)
+      .json({ message: `Message scheduled for ${scheduleTime}` });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendScheduledMessages = async () => {
+  try {
+    const prismaInstance = getPrismaInstance();
+    const [] = await prismaInstance.$transaction(async (prismaTx) => {
+      const scheduledmessages = await prismaTx.scheduledMessages.findMany({
+        where: {
+          status: StatusType.PENDING,
+          scheduleTime: {
+            lte: new Date(),
+          },
+        },
+      });
+
+      //send message
+      for (message of scheduledmessages) {
+        try {
+          await prismaTx.messages.create({
+            data: {
+              senderId: { connect: { id: parseInt(message.senderId) } },
+              messageContent: message.content,
+              type: message.type,
+              chatId: message.chatId,
+            },
+          });
+
+          await prismaInstance.scheduledMessages.update({
+            where: {
+              job_id: message.job_id,
+            },
+            data: {
+              status: StatusType.SENT,
+            },
+          });
+
+          //send realtime update to both sender and reciever
+        } catch (error) {
+          await prismaTx.scheduledMessages.update({
+            where: {
+              job_id: message.job_id,
+            },
+            data: {
+              status: StatusType.FAILED,
+              retryCount: {
+                increment: 1,
+              },
+            },
+          });
+
+          if (message.retryCount >= message.maxRetries) {
+            await prismaTx.scheduledMessages.update({
+              where: {
+                job_id: message.job_id,
+              },
+              data: {
+                status: StatusType.CANCELLED,
+              },
+            });
+          } else {
+            // schedule a retry for later
+            await prismaTx.scheduledMessages.update({
+              where: {
+                job_id: message.job_id,
+              },
+              data: {
+                scheduleTime: new Date(Date.now() + 30000), // 30 seconds later
+              },
+            });
+          }
+        }
       }
-    
-    return res.status(200).send({ message:'deleted', id });
+    });
   } catch (error) {
     next(error);
   }
