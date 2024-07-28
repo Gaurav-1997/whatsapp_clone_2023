@@ -16,18 +16,24 @@ import PhotoPicker from "../common/PhotoPicker";
 import CaptureAudio from "../common/CaptureAudio";
 import { MESSAGE_TYPE_IMAGE, MESSAGE_TYPE_TEXT } from "@/utils/Constants";
 import { setLastMessageInfo, setUserOnTop } from "@/features/user/userSlice";
-import { RxCross2 } from "react-icons/rx";
+import ReplyingFor from "../common/ReplyingFor";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"));
 
 function MessageBar(props) {
-  const {editing=false, setEditModalIsOpen} = props
+  const { editing = false, setEditModalIsOpen } = props;
   const inputRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const [grabPhoto, setGrabPhoto] = useState(false);
   const [showAudioRecorder, setAudioRecorder] = useState(false);
-  const { messages, replyEnabled, parentMessage, parentMessageId, fromSelf, messageToEdit } =
-    useSelector((reduxState) => reduxState.chatReducer);
+  const {
+    messages,
+    replyEnabled,
+    parentMessage,
+    parentMessageId,
+    fromSelf,
+    messageToEdit,
+  } = useSelector((reduxState) => reduxState.chatReducer);
   useEffect(() => {
     const checkPress = (event) => {
       if (event.key === "/") {
@@ -71,9 +77,9 @@ function MessageBar(props) {
       };
     }
   }, [grabPhoto]);
-  
-  console.log("messageToEdit:", messageToEdit)
-  const [message, setMessage] = useState(messageToEdit?.content || '');
+
+  console.log("messageToEdit:", messageToEdit);
+  const [message, setMessage] = useState(messageToEdit?.content || "");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const handleEmojiModal = () => {
@@ -111,20 +117,22 @@ function MessageBar(props) {
 
   const handleSendMessage = () => {
     dispatch(setUserOnTop({ id: currentChatUser?.id }));
-    if(editing){
-      dispatch(editMessage({                  
-        id:messageToEdit?.id,
-        editedContent: message,
-        senderId: userInfo?.id,
-        recieverId: currentChatUser?.id
-      }))
+    if (editing) {
+      dispatch(
+        editMessage({
+          id: messageToEdit?.id,
+          editedContent: message,
+          senderId: userInfo?.id,
+          recieverId: currentChatUser?.id,
+        })
+      );
       setEditModalIsOpen(false);
-      dispatch(setMessageToEdit({}))
-      setMessage('')
+      dispatch(setMessageToEdit({}));
+      setMessage("");
       return;
     }
 
-     dispatch(
+    dispatch(
       sendMessage({
         senderId: userInfo?.id,
         recieverId: currentChatUser?.id,
@@ -133,7 +141,7 @@ function MessageBar(props) {
         privateChatId: privateChatId,
         parentMessageId,
         parentMessage,
-        repliedBy : userInfo?.id
+        repliedBy: userInfo?.id,
       })
     );
     dispatch(
@@ -141,7 +149,7 @@ function MessageBar(props) {
         replyEnabled: false,
         parentMessage: null,
         parentMessageId: null,
-        fromSelf:false
+        fromSelf: false,
       })
     );
     setMessage("");
@@ -168,39 +176,44 @@ function MessageBar(props) {
   return (
     <div className="flex flex-col w-[100%]">
       {replyEnabled && (
-        <div className="bg-panel-header-background flex transition ease-in-out duration-500">
-          <div className="container m-2 p-4 flex rounded-lg bg-slate-800">
-            <div
-              className="w-2 h-[100%] bg-green-500 rounded-sm"
-              style={{ width: "5px" }}
-            ></div>
-            <div
-              className="flex flex-col mx-1"
-              href={`#${parentMessageId}`}
-              target="_self"
-            >
-              <span className="text-[#1cc9a9] font-bold">
-                {fromSelf ? "You" : currentChatUser?.name}
-              </span>
-              <span className="text-[#ffffff]">{parentMessage}</span>
-            </div>
-          </div>
-          <button
-            onClick={() =>
-              dispatch(
-                setReplyEnabled({
-                  replyEnabled: false,
-                  parentMessage: null,
-                  parentMessageId: null,
-                  fromSelf:false
-                })
-              )
-            }
-            className="p-2 text-panel-header-icon font-extrabold"
-          >
-            <RxCross2 className="size-8" />
-          </button>
-        </div>
+        <ReplyingFor
+          parentMessage={parentMessage}
+          parentMessageId={parentMessageId}
+          fromSelf={fromSelf}
+        />
+        // <div className="bg-panel-header-background flex transition ease-in-out duration-500">
+        //   <div className="container m-2 p-4 flex rounded-lg bg-slate-800">
+        //     <div
+        //       className="w-2 h-[100%] bg-green-500 rounded-sm"
+        //       style={{ width: "5px" }}
+        //     ></div>
+        //     <div
+        //       className="flex flex-col mx-1"
+        //       href={`#${parentMessageId}`}
+        //       target="_self"
+        //     >
+        //       <span className="text-[#1cc9a9] font-bold">
+        //         {fromSelf ? "You" : currentChatUser?.name}
+        //       </span>
+        //       <span className="text-[#ffffff]">{parentMessage}</span>
+        //     </div>
+        //   </div>
+        //   <button
+        //     onClick={() =>
+        //       dispatch(
+        //         setReplyEnabled({
+        //           replyEnabled: false,
+        //           parentMessage: null,
+        //           parentMessageId: null,
+        //           fromSelf:false
+        //         })
+        //       )
+        //     }
+        //     className="p-2 text-panel-header-icon font-extrabold"
+        //   >
+        //     <RxCross2 className="size-8" />
+        //   </button>
+        // </div>
       )}
       <div className="bg-panel-header-background h-20 px-4 flex items-center gap-6 relative">
         {!showAudioRecorder && (
