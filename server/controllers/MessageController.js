@@ -6,7 +6,7 @@ import {
   MessageType,
   ReactionType,
 } from "@prisma/client";
-import { getCurrenChatUserFor, getUserStatus } from "../utils/helpers.js";
+import { getCurrenChatUserFor, getUserStatus, pusherService } from "../utils/helpers.js";
 
 export const addMessage = async (req, res, next) => {
   try {
@@ -438,6 +438,13 @@ export const sendScheduledMessages = async () => {
           });
 
           //send realtime update to both sender and reciever
+          const isRecieverOnline = getUserStatus(message.recieverId)
+          const currentChatUserForReciever = global.currentChatUserIdMap.get(Number(message.recieverId));          
+
+          const isSenderOnline = getUserStatus(message.senderId)
+          const currentChatUserForSender = global.currentChatUserIdMap.get(Number(message.senderId));
+
+
         } catch (error) {
           await prismaTx.scheduledMessages.update({
             where: {
